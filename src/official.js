@@ -94,6 +94,7 @@
   // { e: eid, op: 'attr', name, value }   属性を変える（value が空なら外す）
   // { e: eid, op: 'delete' }              その部品を出さない（要素ごと外す）
   // { e: eid, op: 'move', dir: -1 | 1 }   同じ親の中で、前後の要素と入れ替える
+  // { e: eid, op: 'swap', with: eid }     同じ親の中の2つの要素を入れ替える（間に何も出さない分岐が挟まっていてもよい）
   function apply(base, edits) {
     const t = clone(base, null);
     const byEid = indexEid(t);
@@ -112,6 +113,12 @@
         if (k < 0 || j < 0 || j >= els.length) continue;
         const a = sib.indexOf(els[k]), b = sib.indexOf(els[j]);
         sib[a] = els[j]; sib[b] = els[k];
+      } else if (e.op === 'swap') {
+        const other = byEid[e.with];
+        if (!other || other.parent !== el.parent) continue;
+        const sib = el.parent.children;
+        const a = sib.indexOf(el), b = sib.indexOf(other);
+        sib[a] = other; sib[b] = el;
       }
     }
     return t;
@@ -161,7 +168,7 @@
     return parts;
   }
   const escHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  // 目印なしの HTML の文字を、要素ごとの <span class="seg" data-n="番号" data-path="外,…,内"> で包む
+  // 目印なしの HTML の文字を、要素ごとの <span class="cslseg" data-n="番号" data-path="外,…,内"> で包む
   function decorate(cleanHtml, markedHtml) {
     const clean = htmlParts(cleanHtml);
     const mtext = htmlParts(markedHtml).filter((p) => p.text !== undefined).map((p) => p.text).join('');
@@ -175,7 +182,7 @@
       const flush = () => {
         if (!run) return;
         const inner = runPath && runPath.length ? runPath[runPath.length - 1] : '';
-        html += inner === '' ? escHtml(run) : `<span class="seg" data-n="${inner}" data-path="${runPath.join(',')}">${escHtml(run)}</span>`;
+        html += inner === '' ? escHtml(run) : `<span class="cslseg" data-n="${inner}" data-path="${runPath.join(',')}">${escHtml(run)}</span>`;
         run = '';
       };
       for (const ch of chars) {
@@ -191,7 +198,10 @@
 
   // ---- 組む ------------------------------------------------------------------------
   // 1つの CSL で、文献ごとに参考文献と引用（注形式なら初出と2回目以降）を組む。
-  function renderRows(CSL, xml, items, retrieveLocale, lang) {
+  function renderRows(CSL, xml, items, retrieveLocale, lang, loc) {
+    loc = loc || { label: 'page', value: '42' };
+    const num = /^\d+$/.test(loc.value);
+    const far = num ? String(+loc.value + 8) : loc.value;
     const byId = Object.fromEntries(items.map((i) => [i.id, i]));
     const e = new CSL.Engine({ retrieveLocale, retrieveItem: (id) => byId[id] }, xml, lang || 'en-US', false);
     e.setOutputFormat('html');
@@ -209,14 +219,14 @@
       if (hasBib) rows.push(['bib', '参考文献', bib[it.id] || '']);
       if (note) {
         const other = (items.find((x) => x.id !== it.id) || {}).id;
-        const seq = [[it.id, '42']];
-        if (other) seq.push([other, '10'], [it.id, '50']);
-        const cits = seq.map(([x, loc], k) => ({ citationID: 'q' + k, citationItems: [{ id: x, locator: loc, label: 'page' }], properties: { noteIndex: k + 1 } }));
+        const seq = [[it.id, loc.value, loc.label]];
+        if (other) seq.push([other, '10', 'page'], [it.id, far, loc.label]);
+        const cits = seq.map(([x, v, lab], k) => ({ citationID: 'q' + k, citationItems: [{ id: x, locator: v, label: lab }], properties: { noteIndex: k + 1 } }));
         const res = Object.fromEntries(e.rebuildProcessorState(cits, 'html').map(([cid, , s]) => [cid, s]));
         rows.push(['cite', '注（初出）', res.q0]);
         if (other) rows.push(['citeSub', '注（2回目以降）', res.q2]);
       } else {
-        rows.push(['cite', '本文中の引用', e.makeCitationCluster([{ id: it.id, locator: '42', label: 'page' }])]);
+        rows.push(['cite', '本文中の引用', e.makeCitationCluster([{ id: it.id, locator: loc.value, label: loc.label }])]);
       }
       out[it.id] = rows;
     }
@@ -224,12 +234,12 @@
   }
 
   // 元の木と編集の一覧から、目印なし・目印付きの両方で組み、表示用の HTML を作る。
-  function build(CSL, base, edits, items, retrieveLocale) {
+  function build(CSL, base, edits, items, retrieveLocale, loc) {
     const tree = apply(base, edits);
     const xml = serialize(tree);
     const lang = (xml.match(/default-locale="([^"]+)"/) || [])[1] || 'en-US';
-    const clean = renderRows(CSL, xml, items, retrieveLocale, lang);
-    const marked = renderRows(CSL, serialize(instrument(tree)), items, retrieveLocale, lang);
+    const clean = renderRows(CSL, xml, items, retrieveLocale, lang, loc);
+    const marked = renderRows(CSL, serialize(instrument(tree)), items, retrieveLocale, lang, loc);
     let direct = 0, total = 0;
     const view = {};
     for (const it of items) {
@@ -258,7 +268,12 @@
     if (el.tag === 'names') return v ? varLabel(v) + '（名前）' : '名前';
     if (el.tag === 'label') return v ? `${varLabel(v)}のラベル（p. や ed. など）` : 'ラベル';
     if (el.tag === 'date') return v ? varLabel(v) : '日付';
-    if (el.tag === 'group') return 'まとまり';
+    if (el.tag === 'group') {
+      const d = getAttr(el, 'delimiter'), pre = getAttr(el, 'prefix') || '', suf = getAttr(el, 'suffix') || '';
+      if (d) return `まとまり（区切り「${d}」）`;
+      if (pre || suf) return `まとまり（${pre}…${suf}）`;
+      return 'まとまり';
+    }
     if (el.tag === 'layout') return el.parent && el.parent.tag === 'bibliography' ? '参考文献の全体' : '引用の全体';
     if (el.tag === 'text' || el.tag === 'number') {
       if (v) return varLabel(v);

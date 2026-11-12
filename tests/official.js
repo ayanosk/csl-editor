@@ -27,7 +27,7 @@ for (const f of ['chicago-notes-bibliography.csl', 'ieee.csl']) {
   ok(sameAsOrig, '表示する出力は、目印なしの元の出力そのもの');
   const rate = v.direct / v.total;
   ok(rate > 0.97, `文字の直接の対応 ${(100 * rate).toFixed(1)}%（${v.direct}/${v.total}字）`);
-  const segOk = items.every((it) => v.view[it.id].every((r) => r.html.replace(/<span class="seg"[^>]*>|<\/span>/g, '') === r.plain.replace(/&#38;/g, '&amp;')));
+  const segOk = items.every((it) => v.view[it.id].every((r) => r.html.replace(/<span class="cslseg"[^>]*>|<\/span>/g, '') === r.plain.replace(/&#38;/g, '&amp;')));
   ok(segOk, '印を付けた HTML から印を外すと、元の HTML に戻る');
 }
 
@@ -40,7 +40,7 @@ for (const f of ['chicago-notes-bibliography.csl', 'ieee.csl']) {
   // 画面と同じく、出力の文字を押したときの要素（いちばん内側）を使う
   const clickOn = (b, id, key, text) => {
     const html = b.view[id].find((r) => r.key === key).html;
-    const re = /<span class="seg" data-n="(\d+)"[^>]*>([^<]*)<\/span>/g;
+    const re = /<span class="cslseg" data-n="(\d+)"[^>]*>([^<]*)<\/span>/g;
     let m; while ((m = re.exec(html))) if (m[2].includes(text)) return O.index(base)[+m[1]];
     return null;
   };
@@ -58,12 +58,12 @@ for (const f of ['chicago-notes-bibliography.csl', 'ieee.csl']) {
   ok(!row(e2, 's-en-book-1', 'bib').includes('Example University Press') && row(e2, 's-en-book-1', 'cite').includes('Example University Press'), '参考文献の出版者を外すと、参考文献からだけ消える');
   // 並べ替え：出版者と年のまとまりの中で入れ替える（「, 」を押すと、そのまとまりにたどり着く）
   const html = before.view['s-en-book-1'].find((r) => r.key === 'bib').html;
-  const mm = html.match(/Example University Press<\/span><span class="seg" data-n="(\d+)"[^>]*>, <\/span>/);
+  const mm = html.match(/Example University Press<\/span><span class="cslseg" data-n="(\d+)"[^>]*>, <\/span>/);
   const grp = mm && O.index(base)[+mm[1]];
   ok(!!grp && grp.tag === 'group', `出版者と年の間の「, 」を押すと、まとまりにたどり着く（区切り「${grp && O.getAttr(grp, 'delimiter')}」）`);
   // 出版者を含む子を、年を含む子と入れ替える。マクロの呼び出しをまたぐので、元の木ではなく、
   // 組んだときの入れ子（data-path：外から内へ）で、まとまりのすぐ内側の要素を見る。
-  const pm = html.match(/<span class="seg" data-n="\d+" data-path="([\d,]+)">Example University Press<\/span>/);
+  const pm = html.match(/<span class="cslseg" data-n="\d+" data-path="([\d,]+)">Example University Press<\/span>/);
   const pathNums = pm ? pm[1].split(',').map(Number) : [];
   const inner = O.index(base)[pathNums[pathNums.indexOf(grp.ord) + 1]];
   const unit = O.unitIn(grp, inner);

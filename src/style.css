@@ -233,3 +233,18 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
 .chip.grp { border-color: var(--sel); background: transparent; border-radius: 4px; padding: 4px 6px; color: var(--sel); font-weight: 700; }
 .palette .hint { margin: 0; align-self: center; }
 .chip.grp .grp-mark { font-size: 11px; }
+
+/* ---- 公式のスタイルの手直し ---- */
+.item.off .cslseg { cursor: pointer; border-radius: 3px; }
+.item.off .cslseg:hover { background: var(--accent-weak); }
+.item.off .cslseg.hl { background: var(--warn-bg); color: var(--warn-ink); box-shadow: 0 0 0 1px var(--warn-ink) inset; }
+.item.off { cursor: default; }
+.off-source { margin-bottom: 10px; }
+.off-empty { border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; margin: 8px 0 14px; }
+.off-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 6px 0 2px; font-size: 12px; }
+.off-crumbs .crumb { border: 1px solid var(--line); background: var(--panel); border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+.off-crumbs .crumb.on { border-color: var(--accent); background: var(--accent-weak); font-weight: 600; }
+.off-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.off-actions .danger { color: var(--err-ink); }
+.off-edits { list-style: none; padding: 0; margin: 4px 0 8px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.off-edits li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

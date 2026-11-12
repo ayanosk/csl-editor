@@ -17,7 +17,7 @@ const fs=require('fs');const G=require('$ROOT/src/csl_generate.js');const {START
 for(const k of Object.keys(STARTERS)){const m=makeStarter(k);m.info.title='test_'+k;m.info.id='http://www.zotero.org/styles/csl-editor-test-'+k;fs.writeFileSync('$WORK/test_'+k+'.csl',G.generate(m));}"
 
 fail=0
-for t in flow resume lang_ui item_ui types_ui langsel sub_ui grp_ui upgrade split_ui naming_ui import_ui locator_ui; do
+for t in flow resume lang_ui item_ui types_ui langsel sub_ui grp_ui upgrade split_ui naming_ui import_ui locator_ui official_ui; do
   out="$(node "$HERE/$t.js" "$HTML" "$WORK" 2>&1)"
   last="$(printf '%s\n' "$out" | tail -1)"
   if printf '%s' "$last" | grep -q "なし"; then echo "OK   $t"; else echo "FAIL $t"; printf '%s\n' "$out" | sed 's/^/     /'; fail=1; fi
