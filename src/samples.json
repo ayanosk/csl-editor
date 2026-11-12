@@ -1,0 +1,758 @@
+[
+  {
+    "id": "s-ja-book-1",
+    "type": "book",
+    "language": "ja",
+    "title": "デジタル史料学入門",
+    "author": [
+      {
+        "family": "山田",
+        "given": "花子"
+      }
+    ],
+    "publisher": "越後書房",
+    "publisher-place": "新潟",
+    "issued": {
+      "date-parts": [
+        [
+          2024
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-book-2",
+    "type": "book",
+    "language": "ja",
+    "title": "越後の村と検地",
+    "author": [
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      },
+      {
+        "family": "長岡",
+        "given": "三郎"
+      }
+    ],
+    "publisher": "越後書房",
+    "publisher-place": "新潟",
+    "issued": {
+      "date-parts": [
+        [
+          2021
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-book-4",
+    "type": "book",
+    "language": "ja",
+    "title": "史料データの共同編纂",
+    "author": [
+      {
+        "family": "山田",
+        "given": "花子"
+      },
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      },
+      {
+        "family": "長岡",
+        "given": "三郎"
+      },
+      {
+        "family": "上越",
+        "given": "四郎"
+      }
+    ],
+    "publisher": "越後書房",
+    "publisher-place": "新潟",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-chapter-1",
+    "type": "chapter",
+    "language": "ja",
+    "title": "検地帳の構造",
+    "author": [
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      }
+    ],
+    "editor": [
+      {
+        "family": "山田",
+        "given": "太郎"
+      }
+    ],
+    "container-title": "史料とデータ",
+    "publisher": "越後書房",
+    "publisher-place": "新潟",
+    "page": "101-125",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-chapter-2",
+    "type": "chapter",
+    "language": "ja",
+    "title": "村方文書の目録化",
+    "author": [
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      },
+      {
+        "family": "長岡",
+        "given": "三郎"
+      }
+    ],
+    "editor": [
+      {
+        "family": "山田",
+        "given": "太郎"
+      }
+    ],
+    "container-title": "史料とデータ",
+    "publisher": "越後書房",
+    "publisher-place": "新潟",
+    "page": "127-150",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-chapter-4",
+    "type": "chapter",
+    "language": "ja",
+    "title": "共同翻刻の実践",
+    "author": [
+      {
+        "family": "山田",
+        "given": "花子"
+      },
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      },
+      {
+        "family": "長岡",
+        "given": "三郎"
+      },
+      {
+        "family": "上越",
+        "given": "四郎"
+      }
+    ],
+    "editor": [
+      {
+        "family": "山田",
+        "given": "太郎"
+      }
+    ],
+    "container-title": "史料とデータ",
+    "publisher": "越後書房",
+    "publisher-place": "新潟",
+    "page": "151-170",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-article-1",
+    "type": "article-journal",
+    "language": "ja",
+    "title": "近世村方文書のTEI化",
+    "author": [
+      {
+        "family": "山田",
+        "given": "花子"
+      }
+    ],
+    "container-title": "越後史学",
+    "volume": "12",
+    "issue": "3",
+    "page": "45-67",
+    "issued": {
+      "date-parts": [
+        [
+          2024,
+          3
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-article-2",
+    "type": "article-journal",
+    "language": "ja",
+    "title": "検地帳の数量分析",
+    "author": [
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      },
+      {
+        "family": "長岡",
+        "given": "三郎"
+      }
+    ],
+    "container-title": "越後史学",
+    "volume": "11",
+    "issue": "2",
+    "page": "1-22",
+    "issued": {
+      "date-parts": [
+        [
+          2023,
+          9
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-article-4",
+    "type": "article-journal",
+    "language": "ja",
+    "title": "共同研究による村方文書の構造化",
+    "author": [
+      {
+        "family": "山田",
+        "given": "花子"
+      },
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      },
+      {
+        "family": "長岡",
+        "given": "三郎"
+      },
+      {
+        "family": "上越",
+        "given": "四郎"
+      }
+    ],
+    "container-title": "越後史学",
+    "volume": "13",
+    "issue": "1",
+    "page": "23-44",
+    "issued": {
+      "date-parts": [
+        [
+          2025,
+          4
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-web-1",
+    "type": "webpage",
+    "language": "ja",
+    "title": "史料目録の使い方",
+    "author": [
+      {
+        "family": "山田",
+        "given": "花子"
+      }
+    ],
+    "container-title": "越後デジタルアーカイブ",
+    "URL": "https://example.org/guide",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          11,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-web-2",
+    "type": "webpage",
+    "language": "ja",
+    "title": "古文書画像の見方",
+    "author": [
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      },
+      {
+        "family": "長岡",
+        "given": "三郎"
+      }
+    ],
+    "container-title": "越後デジタルアーカイブ",
+    "URL": "https://example.org/images",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          11,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-ja-web-4",
+    "type": "webpage",
+    "language": "ja",
+    "title": "翻刻の手引き",
+    "author": [
+      {
+        "family": "山田",
+        "given": "花子"
+      },
+      {
+        "family": "佐渡",
+        "given": "次郎"
+      },
+      {
+        "family": "長岡",
+        "given": "三郎"
+      },
+      {
+        "family": "上越",
+        "given": "四郎"
+      }
+    ],
+    "container-title": "越後デジタルアーカイブ",
+    "URL": "https://example.org/transcription",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          11,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-book-1",
+    "type": "book",
+    "language": "en",
+    "title": "Village Records and the State",
+    "author": [
+      {
+        "family": "Brown",
+        "given": "Emily"
+      }
+    ],
+    "publisher": "Example University Press",
+    "publisher-place": "London",
+    "issued": {
+      "date-parts": [
+        [
+          2020
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-book-2",
+    "type": "book",
+    "language": "en",
+    "title": "Numbers in the Archive: An Introduction",
+    "author": [
+      {
+        "family": "Dubois",
+        "given": "Léa"
+      },
+      {
+        "family": "Moreau",
+        "given": "Jules"
+      }
+    ],
+    "translator": [
+      {
+        "family": "Hughes",
+        "given": "Anna"
+      }
+    ],
+    "publisher": "Example University Press",
+    "publisher-place": "London",
+    "issued": {
+      "date-parts": [
+        [
+          2019
+        ]
+      ]
+    },
+    "title-short": "Numbers in the Archive"
+  },
+  {
+    "id": "s-en-book-4",
+    "type": "book",
+    "language": "en",
+    "title": "Collaborative Editing of Historical Sources",
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      },
+      {
+        "family": "Lee",
+        "given": "Sarah"
+      },
+      {
+        "family": "Garcia",
+        "given": "Maria"
+      },
+      {
+        "family": "Chen",
+        "given": "Wei"
+      }
+    ],
+    "publisher": "Example University Press",
+    "publisher-place": "London",
+    "issued": {
+      "date-parts": [
+        [
+          2024
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-chapter-1",
+    "type": "chapter",
+    "language": "en",
+    "title": "Encoding Village Records",
+    "author": [
+      {
+        "family": "Brown",
+        "given": "Emily"
+      }
+    ],
+    "editor": [
+      {
+        "family": "Taylor",
+        "given": "Mark"
+      }
+    ],
+    "container-title": "Sources and Data in Historical Research",
+    "publisher": "Example University Press",
+    "publisher-place": "London",
+    "page": "101-125",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-chapter-2",
+    "type": "chapter",
+    "language": "en",
+    "title": "Linking Archival Catalogues",
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      },
+      {
+        "family": "Lee",
+        "given": "Sarah"
+      }
+    ],
+    "editor": [
+      {
+        "family": "Taylor",
+        "given": "Mark"
+      }
+    ],
+    "container-title": "Sources and Data in Historical Research",
+    "publisher": "Example University Press",
+    "publisher-place": "London",
+    "page": "127-150",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-chapter-4",
+    "type": "chapter",
+    "language": "en",
+    "title": "Crowdsourced Transcription",
+    "author": [
+      {
+        "family": "Garcia",
+        "given": "Maria"
+      },
+      {
+        "family": "Chen",
+        "given": "Wei"
+      },
+      {
+        "family": "Wilson",
+        "given": "James"
+      },
+      {
+        "family": "Kim",
+        "given": "Minji"
+      }
+    ],
+    "editor": [
+      {
+        "family": "Taylor",
+        "given": "Mark"
+      }
+    ],
+    "container-title": "Sources and Data in Historical Research",
+    "publisher": "Example University Press",
+    "publisher-place": "London",
+    "page": "151-170",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-article-1",
+    "type": "article-journal",
+    "language": "en",
+    "title": "Archives as Data",
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      }
+    ],
+    "container-title": "Digital Archives Review",
+    "volume": "5",
+    "issue": "2",
+    "page": "10-30",
+    "issued": {
+      "date-parts": [
+        [
+          2022
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-article-2",
+    "type": "article-journal",
+    "language": "en",
+    "title": "Network Analysis of Early Modern Letters",
+    "author": [
+      {
+        "family": "Lee",
+        "given": "Sarah"
+      },
+      {
+        "family": "Garcia",
+        "given": "Maria"
+      }
+    ],
+    "container-title": "Digital Archives Review",
+    "volume": "4",
+    "issue": "1",
+    "page": "1-25",
+    "issued": {
+      "date-parts": [
+        [
+          2021
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-article-4",
+    "type": "article-journal",
+    "language": "en",
+    "title": "Text Encoding at Scale",
+    "author": [
+      {
+        "family": "Chen",
+        "given": "Wei"
+      },
+      {
+        "family": "Kim",
+        "given": "Minji"
+      },
+      {
+        "family": "Wilson",
+        "given": "James"
+      },
+      {
+        "family": "Brown",
+        "given": "Emily"
+      }
+    ],
+    "container-title": "Digital Archives Review",
+    "volume": "6",
+    "issue": "1",
+    "page": "31-60",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-web-1",
+    "type": "webpage",
+    "language": "en",
+    "title": "How to Use the Catalogue",
+    "author": [
+      {
+        "family": "Taylor",
+        "given": "Mark"
+      }
+    ],
+    "container-title": "Example Digital Archive",
+    "URL": "https://example.org/catalogue",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          11,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-web-2",
+    "type": "webpage",
+    "language": "en",
+    "title": "A Guide to IIIF Images",
+    "author": [
+      {
+        "family": "Kim",
+        "given": "Minji"
+      },
+      {
+        "family": "Wilson",
+        "given": "James"
+      }
+    ],
+    "container-title": "Example Digital Archive",
+    "URL": "https://example.org/iiif",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          11,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "id": "s-en-web-4",
+    "type": "webpage",
+    "language": "en",
+    "title": "Transcription Guidelines",
+    "author": [
+      {
+        "family": "Smith",
+        "given": "John"
+      },
+      {
+        "family": "Lee",
+        "given": "Sarah"
+      },
+      {
+        "family": "Garcia",
+        "given": "Maria"
+      },
+      {
+        "family": "Chen",
+        "given": "Wei"
+      }
+    ],
+    "container-title": "Example Digital Archive",
+    "URL": "https://example.org/guidelines",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          11,
+          1
+        ]
+      ]
+    }
+  }
+]

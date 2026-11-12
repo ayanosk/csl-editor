@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>引用スタイル（CSL）編集アプリ（β版）</title>
+<!-- @inline style.css -->
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <button id="btnBrand" type="button" class="brand-name" title="引用スタイルを選び直す（いまの編集は置き換わります）">引用スタイル（CSL）編集アプリ <span class="beta">β版</span></button>
+  </div>
+  <label class="style-title">スタイル名
+    <input id="styleTitle" type="text" placeholder="例：thesis_japanese_history" spellcheck="false" autocomplete="off">
+    <span id="styleTitleMsg" class="title-msg" hidden></span>
+  </label>
+  <div class="actions">
+    <button id="btnStarter" type="button" title="型を選ぶか、前に書き出した .csl を読み込みます（いまの編集は置き換わります）">引用スタイルを選び直す</button>
+    <button id="btnExport" type="button" class="primary" title="和文と欧文を1つのスタイルで書き分けます（Zotero 向け）">多言語版を書き出す</button>
+    <button id="btnExportSplit" type="button" title="書式ごとに別のスタイルを作ります（多言語に対応しないソフト向け）">言語別に書き出す</button>
+    <button id="btnHelp" type="button">使い方</button>
+  </div>
+  <input id="fileItems" type="file" accept=".json,application/json" hidden>
+  <input id="fileCsl" type="file" accept=".csl,.xml" hidden>
+</header>
+
+<main class="layout">
+  <section class="editor" aria-label="書式の編集">
+    <nav class="panel-tabs" id="panelTabs" role="tablist"></nav>
+    <div id="panelBody"></div>
+  </section>
+
+  <section class="preview" aria-label="プレビュー">
+    <div class="preview-head">
+      <h2>プレビュー</h2>
+      <span id="dataSource" class="muted"></span>
+      <span class="spacer"></span>
+      <span id="previewFilter" class="filter"></span>
+      <button id="btnResetItems" type="button" class="small-btn" hidden>見本に戻す</button>
+      <button id="btnAddItem" type="button" class="small-btn">見本の書誌を編集する</button>
+    </div>
+    <div id="previewError" class="error" hidden></div>
+    <div id="previewList"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p><b>引用スタイル（CSL）編集アプリ（β版）</b>　版 <!-- @version -->（2026年、Ayano KOKAZE 作成）。作成には Anthropic の Claude Code を用いました。β版のため、画面や出力は予告なく変わることがあります。書き出したスタイルは、最後に Zotero などで確かめてください。</p>
+  <p>読み込んだ書誌（CSL JSON）や .csl は、このブラウザの中だけで処理します。外部には送信しません。作業中の状態は、このブラウザの中に保存されます（ほかの人やほかの端末からは見えません）。</p>
+  <p>このアプリは AGPL-3.0 で公開しています（<a href="https://github.com/ayanosk/csl-editor">ソース</a>）。組版エンジン citeproc-js（CPAL 1.0 または AGPL 3.0）と、CSL のロケール（CC BY-SA 3.0）を同梱しています。詳しくは「使い方」をご覧ください。</p>
+</footer>
+
+<dialog id="dlgStarter">
+  <form method="dialog">
+    <h2>引用スタイルを選ぶ</h2>
+    <h3 class="dlg-sec">はじめて作る：似ている型を選ぶ</h3>
+    <p>書きたい形に近いスタイルを選んでください。選んだスタイルをもとに、部品を並べ替えて自分の使いたいスタイルに編集できます。</p>
+    <p class="muted small">各スタイルの典型的な形を簡略に再現した出発点です。公式のスタイルではなく、各団体とは関係ありません。規定どおりかは、それぞれの規定で確かめてください。</p>
+    <p class="muted small">見本は、見本データの欧文と和文の本を、それぞれの書き方で組んだものです。</p>
+    <div id="starterList" class="starter-list"></div>
+    <h3 class="dlg-sec">続きから直す：書き出した .csl を読み込む</h3>
+    <div id="cslDrop" class="drop-zone">
+      <p>前にこのアプリで書き出した .csl を、ここに落とすか、ボタンで選んでください。</p>
+      <button id="btnDlgLoadCsl" type="button">.csl をアップロード</button>
+      <p class="muted small">ファイルはこのブラウザの中で読むだけで、どこにも送られません。</p>
+      <p class="muted small">読み込めるのは、このアプリで書き出した .csl だけです。Zotero のスタイル一覧などで手に入れた .csl は、作りが違うので読み込めません。既存のスタイルをそのまま使うなら、<a href="https://www.zotero.org/styles" target="_blank" rel="noopener">Zotero のスタイル一覧</a>から探して、Zotero に直接入れてください。</p>
+    </div>
+    <p class="muted small">どちらを選んでも、いまの編集は置き換わります。</p>
+    <div class="dlg-actions"><button value="cancel">閉じる</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgItemList">
+  <form method="dialog">
+    <h2 id="itemListTitle">見本の書誌を編集する</h2>
+    <h3 class="dlg-sec">Zotero から自分の文献を取り込む</h3>
+    <ol class="help-steps">
+      <li>Zotero で使いたい文献を選び（Ctrl か ⌘ を押しながらで複数）、右クリックして「選択された項目をエクスポート...」を選びます。</li>
+      <li>形式で「CSL JSON」を選んで保存します。文献のデータを、書式を付けずにそのまま書き出す形式で、Zotero が引用を組むときに使うのと同じ形です。</li>
+      <li>下の「ファイルを選ぶ」で、保存したファイル（.json）を選びます。</li>
+    </ol>
+    <p class="import-row"><button type="button" id="btnPickItems" class="primary">ファイルを選ぶ</button>
+      <span class="muted small">いまの文献と入れ替わります。ファイルはこのブラウザの中で読むだけで、どこにも送られません。</span></p>
+    <h3 class="dlg-sec">文献を選んで直す</h3>
+    <p class="hint">自分の分野の書誌に近づけると、プレビューでそのまま確かめられます。直した内容はこのブラウザの中にだけ保存され、Zotero のデータは変わりません。</p>
+    <div id="itemList" class="item-list"></div>
+    <div class="dlg-actions"><button type="button" id="btnNewItem">＋ 新しく入れる</button><span class="spacer"></span><button value="cancel">閉じる</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgSplit">
+  <form method="dialog">
+    <h2>言語別に書き出す</h2>
+    <p class="hint">書式ごとに、別々のスタイル（.csl）を作ります。pandoc など、言語による書き分けに対応しないソフトでも使えます。ただし1つのスタイルはすべての文献をその書式で組むので、和文と欧文が混ざった文献リストには「多言語版」を使ってください。Zotero に入れるときの警告は出ません。</p>
+    <div id="splitList" class="split-list"></div>
+    <p id="splitFiles" class="hint"></p>
+    <div class="dlg-actions"><button value="cancel">やめる</button><button type="button" id="btnDoSplit" class="primary">書き出す</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgItem">
+  <form method="dialog" id="itemForm"></form>
+</dialog>
+
+<dialog id="dlgHelp">
+  <form method="dialog">
+    <h2>使い方</h2>
+    <ol class="help-steps">
+      <li><b>引用スタイルを選ぶ</b>：最初に開く画面です（あとから「引用スタイルを選び直す」かアプリ名を押すと、また開きます。いまの編集は置き換わります）。Chicago 風・APA 風・MLA 風・IEEE 風から、書きたい形に近いものを選びます。各スタイルの典型的な形を簡略に再現した出発点です。公式のスタイルではなく、各団体とは関係ありません。規定どおりかは、それぞれの規定で確かめてください。前に書き出した .csl があれば、それを読み込んで続きから直せます。</li>
+      <li><b>自分の文献で試す</b>：プレビューの「見本の書誌を編集する」から、Zotero の文献を取り込めます。Zotero で文献を選んで右クリック →「選択された項目をエクスポート...」→ 形式「CSL JSON」で保存したファイルを選ぶと、自分の文献でプレビューできます。読み込まなければ見本データで練習できます。プレビューの「見本の書誌を編集する」で文献を選んで直すことも、新しく入れることもできます。各文献の「直す」でも書き換えられます。「隠す」はその文献をプレビューに出さないだけで、データは残ります（プレビューの下の「隠した文献」から戻せます）。「参考文献を作成」でコピーした文章は使えません（整形済みの文字なので、組み直せないため）。</li>
+      <li><b>部品を並べる</b>：左の「和文の書式」「欧文の書式」で、資料の種類ごとに部品（チップ）を並べます。チップはドラッグか ← → で動かせます。押すと、括弧や前後の文字を変えられます。資料の種類は、図書・本の章・雑誌論文・ウェブページが既定です。学位論文や新聞記事などを別の並びで組みたいときは、「項目の種類を選ぶ」でチェックを入れます。チェックの無い種類は「その他」の並びで組みます。</li>
+      <li><b>区切り</b>：チップの間には区切り（、 , . など）を置きます。区切りは両側に部品があるときだけ出ます。部品が空の文献では、<b>その部品と、その前の区切りが消えます</b>。</li>
+      <li><b>まとめる</b>：「〔 〕で囲む」で部品をまとめると、中が全部空の文献では、まとまりごと消えます。たとえば「書名. 〔訳者, 出版者, 年〕」とまとめれば、訳者のいない本でも「書名. 出版者, 年」になります。括弧（ ）は、まとまりの前後に付けると、中身が無いときに空の括弧が残りません。Zotero の公開スタイルも、同じ仕組み（CSL の group）で空欄を処理しています。</li>
+      <li><b>書き出す</b>：スタイル名は半角の英字・数字と <code>_</code> <code>-</code> <code>.</code> <code>( )</code> と空白で付けます（日本語は使えません）。型から始めたときのスタイル名は My_Chicago_style のようになります。前に書き出した .csl を読み込むと、ファイル名に _edited を付けた名前になり、ID も新しくなります（Zotero では元のスタイルと別に入ります。_edited の付いたものをもう一度読み込んで直したときは、名前も ID もそのままなので、Zotero では同じスタイルの更新になります）。ふつうは「多言語版を書き出す」で、和文と欧文を1つのスタイルで書き分けます（Zotero では入れるときに警告が出ます）。言語による書き分けに対応しないソフト（pandoc など）で使うときは「言語別に書き出す」で、書式ごとのスタイルを作ります（2つ以上選ぶと zip にまとめます）。保存したら、Zotero の 設定 → 引用 →「＋」から入れます。</li>
+    </ol>
+    <h3>和文と欧文</h3>
+    <p>どちらの書式で組むかは、Zotero の「言語」欄で決まります。<code>ja</code> なら和文、<code>en</code> <code>fr</code> <code>de</code> などなら欧文です。欄が空の文献は和文の書式で組みます。プレビューに警告が出たら、Zotero で言語欄を直してください。</p>
+    <p>英語は「欧文の書式」が既定です。フランス語の文献は « » や「et」で組みたい、など言語ごとに変えたいときは、「＋ 言語ごとの書式」から言語コード（<code>fr</code> <code>de</code> など）を入れて足します。その言語の文献だけが、足した書式で組まれます。</p>
+    <h3>2回目以降の注</h3>
+    <p>注形式では、「注（2回目以降）」と「注（直前と同じ本）」の並びを別に作れます。間に別の注を挟んで同じ本を引くと短縮形（山田『デジタル史料学入門』50頁）、直前の注と同じ本なら「同上」（頁も同じなら「同上。」、頁が違えば「同上、45頁。」）になります。短縮形の題名には Zotero の「短いタイトル」欄が使われます。書き分けは「全体の設定」で切れます。</p>
+    <h3>CSL ではできないこと</h3>
+    <ul>
+      <li><b>五十音順に並べること</b>：Zotero には読みの欄がありません。並びは漢字の文字コード順になります（読みを持てる Jurism という派生版もあります）。</li>
+      
+    </ul>
+    <h3>このアプリについて</h3>
+    <p class="muted small">組版エンジンは citeproc-js 2.4.63（© 2009-2019 Frank Bennett、CPAL 1.0 または AGPL 3.0 の選択）。Zotero が中で使っているのと同じ版のエンジンですが、Zotero 側で手が入っているので、細かい出力が違うことがあります。最後は Zotero に入れて確かめてください。ロケールは CSL プロジェクトの locales-*.xml（日・英・仏・独・伊・西・蘭・葡・羅・露、CC BY-SA 3.0）。ライセンスの全文と、埋め込んだソースは、この HTML ファイルの中にそのまま入っています。作業中の状態はこのブラウザの中にだけ保存され、どこにも送られません。</p>
+    <div class="dlg-actions"><button value="cancel">閉じる</button></div>
+  </form>
+</dialog>
+
+<!-- @vendor citeproc -->
+<!-- @data -->
+<!-- @inline csl_generate.js -->
+<!-- @inline starters.js -->
+<!-- @inline app.js -->
+</body>
+</html>

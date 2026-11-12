@@ -1,0 +1,4 @@
+[{"id":"http://zotero.org/users/1/items/AB12","type":"book","title":"古文書学概論","author":[{"family":"越後","given":"一郎"}],"publisher":"佐渡出版","issued":{"date-parts":[["2020"]]}},
+ {"id":12,"type":"book","title":"近世史料論","author":[{"family":"長岡","given":"二郎"}],"publisher":"佐渡出版","issued":{"date-parts":[["2018"]]},"language":"jpn"},
+ {"id":13,"type":"article-journal","title":"Les archives notariales","author":[{"family":"Dupont","given":"Jean"}],"container-title":"Revue d'histoire","volume":"8","issue":"2","page":"5-20","issued":{"date-parts":[["2015"]]},"language":"fr"},
+ {"id":14,"type":"thesis","title":"村の記録","author":[{"family":"山田","given":"花子"}],"publisher":"越後大学出版会","issued":{"date-parts":[["2026"]]},"language":"ja"}]
