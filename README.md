@@ -47,6 +47,7 @@ python3 build.py                  # src/ と vendor/ を docs/index.html にま�
 node tests/roundtrip.js           # 書き出し → 読み戻しの一致
 node tests/empty_fields.js        # 欄が空のときに句読点や括弧が崩れないか
 node tests/split_export.js        # 言語別の書き出し（pandoc があれば pandoc でも組む）
+node tests/locator.js             # 引用箇所（頁・章・節）の組み方
 bash tests/browser/run_all.sh     # ヘッドレスの Chrome で画面を操作する検証
 ```
 

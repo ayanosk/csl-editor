@@ -27,7 +27,7 @@
     accessed: { label: '参照日', kind: 'date', term: 'accessed' },
     URL: { label: 'URL', kind: 'text' },
     DOI: { label: 'DOI', kind: 'text' },
-    locator: { label: '引用頁', kind: 'number', term: 'locator', citeOnly: true },
+    locator: { label: '引用箇所', kind: 'number', term: 'locator', citeOnly: true },
     'citation-number': { label: '番号', kind: 'number' },
     literal: { label: '任意の文字', kind: 'literal' },
   };
@@ -166,7 +166,7 @@
       case 'number': {
         const v = chip.f;
         inner = `<text${attrs({ variable: v, ...fmt })}/>`;
-        inner = withLabel(inner, chip, sys, def, space);
+        inner = v === 'locator' ? locatorXml(inner, chip, sysKey, sys, def, space) : withLabel(inner, chip, sys, def, space);
         break;
       }
     }
@@ -180,7 +180,30 @@
     return xml;
   }
 
-  // 巻・号・頁・版・引用頁・参照日に添える用語。
+  // 引用箇所（Zotero で引用するときに選ぶ種類と値）。
+  // 値が数字だけ（42、42-45、2）なら、種類の用語を添える（42頁、p. 42）。和文の書式で用語を後ろに付けるときは、
+  // 章・節・部に「第」を前に付ける（第2章）。値が文字を含む（第二章、2章2節）なら、用語を重ねずに入れたまま出す。
+  // locator の種類を複数並べる条件は、match="any" が要る（既定の all では、いつも外れる）。
+  // 用語を付けない設定（Chicago・MLA の欧文の「…, 42.」）でも、頁以外の種類には用語を添える
+  // （chap. 2、sec. 3。和文なら第2章）。付けないと、章なのか頁なのか区別できないため。
+  function locatorXml(val, chip, sysKey, sys, def, space) {
+    const pos = (chip.opt || {}).label || 'none';
+    const lab = '<label variable="locator" form="short"/>';
+    const dai = `<group><text value="第"/>${val}${lab}</group>`;
+    let numeric;
+    if (sysKey === 'ja' && pos !== 'before') {
+      // 和文：章・節・部は「第2章」、それ以外は設定どおり（用語なしの設定でも、頁以外には用語を後ろに付ける）
+      const rest = pos === 'none' ? `<choose><if locator="page">${val}</if><else><group>${val}${lab}</group></else></choose>` : withLabel(val, chip, sys, def, space);
+      numeric = `<choose><if locator="chapter section part" match="any">${dai}</if><else>${rest}</else></choose>`;
+    } else if (pos === 'none') {
+      numeric = `<choose><if locator="page">${val}</if><else><group delimiter=" ">${lab}${val}</group></else></choose>`;
+    } else {
+      numeric = withLabel(val, chip, sys, def, space);
+    }
+    return `<choose><if is-numeric="locator">${numeric}</if><else>${val}</else></choose>`;
+  }
+
+  // 巻・号・頁・版・引用箇所・参照日に添える用語。
   function withLabel(inner, chip, sys, def, space) {
     const pos = (chip.opt || {}).label || 'none';
     if (!def.term || pos === 'none') return inner;

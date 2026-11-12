@@ -13,7 +13,7 @@
     items: null,
     source: '見本データ',
     hidden: [], // 隠した文献の id。データには残し、プレビューと組版から外す
-    ui: { panel: 'ja', target: 'bib', tab: 'book', sel: null, filter: 'auto' },
+    ui: { panel: 'ja', target: 'bib', tab: 'book', sel: null, filter: 'auto', loc: 'page:42' },
   };
   let uidN = 0;
 
@@ -228,7 +228,7 @@
     if (state.ui.target === 'cite') {
       extra.push(h('p', { class: 'hint' },
         state.model.kind === 'note'
-          ? (hasSubsequent() ? 'その本を初めて引く注の並びです。' : '注の並びです。') + 'プレビューでは引用頁を 42 として組みます。'
+          ? (hasSubsequent() ? 'その本を初めて引く注の並びです。' : '注の並びです。') + 'プレビューの引用箇所は、上の「引用箇所」で選んだもので組みます。'
           : '本文中の引用の並びです。括弧と区切りは「全体の設定」で変えます。',
         ' ', h('button', { type: 'button', onclick: () => copyChips('bib', '参考文献') }, '参考文献の並びを写す')));
     } else if (state.ui.target === 'citeSub') {
@@ -242,7 +242,7 @@
             .map(([k, label]) => h('button', { type: 'button', class: 'small-btn', onclick: () => applySubPreset(k, label) }, label))));
     } else if (state.ui.target === 'citeIbid') {
       extra.push(h('p', { class: 'hint' },
-        '直前の注と同じ本を引いたときの並びです。頁が違えば引用頁が付き（「同上、45頁。」）、頁も同じなら引用頁は自動で消えます（「同上。」）。「同上」を使わない書き方にするときは、2回目以降の並びを写してください。',
+        '直前の注と同じ本を引いたときの並びです。箇所が違えば引用箇所が付き（「同上、45頁。」）、箇所も同じなら引用箇所は自動で消えます（「同上。」）。「同上」を使わない書き方にするときは、2回目以降の並びを写してください。',
         ' ', h('button', { type: 'button', onclick: () => copyChips('citeSub', '注（2回目以降）') }, '注（2回目以降）の並びを写す')));
     }
     // 上に資料の種類（図書・本の章…）、その下に書く場所（参考文献・注…）。プレビューの並びと同じ順。
@@ -508,7 +508,7 @@
     }
     const hints = [];
     if (def.term) hints.push('用語の文字は「用語表」で変えられます。');
-    if (c.f === 'locator') hints.push('引用頁は、Zotero で引用するときに入れる頁です。');
+    if (c.f === 'locator') hints.push('引用箇所は、Zotero で引用するときに選ぶ種類（ページ・章・節など）と値です。値が数字だけなら「42頁」「第2章」の形に整え、「第二章」「2章2節」のように文字を含むときは、用語を重ねずに入れたまま出します。');
     if (def.kind === 'date') hints.push('「年だけ」のときは、後ろに「年」を付けるかどうかを「後ろに付ける文字」で決めます。');
     box.replaceChildren(head, grid, ...hints.map((t) => h('p', { class: 'hint', text: t })));
   }
@@ -730,7 +730,7 @@
       let citeRows = null;
       try {
         if (hasSubsequent()) citeRows = noteSequence(eng, id, items);
-        else cite = eng.makeCitationCluster([{ id, locator: '42', label: 'page' }]);
+        else cite = eng.makeCitationCluster([{ id, locator: curLoc().value, label: curLoc().label }]);
       } catch (e) { cite = '（組めませんでした）'; citeRows = null; }
       const warn = langWarning(it);
       const card = h('div', { class: 'item', 'data-sys': sys, 'data-tab': tab, 'data-authors': authorCountLabel(it), title: '押すと、この文献の書式を編集します',
@@ -769,16 +769,27 @@
       });
     }
   }
+  // プレビューで引く箇所（Zotero で引用するときに選ぶ種類と値）。
+  const LOCS = [['page:42', '頁 42'], ['page:42-45', '頁 42-45'], ['chapter:2', '章 2'], ['chapter:第二章', '章 第二章'], ['chapter:2章2節', '章 2章2節'], ['section:3', '節 3']];
+  function curLoc() {
+    const v = LOCS.some(([k]) => k === state.ui.loc) ? state.ui.loc : 'page:42';
+    const i = v.indexOf(':');
+    return { label: v.slice(0, i), value: v.slice(i + 1) };
+  }
   // 同じ本を何度か引いたときの注を、続けて組んで見せる。
   // 注1：初出（42頁）／注2：直前と同じ本・同じ頁／注3：直前と同じ本・別の頁（45頁）／注4：別の本／注5：間を挟んで同じ本（50頁）。
   function noteSequence(eng, id, items) {
     const other = (items.find((i) => i.id !== id) || {}).id;
-    const seq = [[id, '42'], [id, '42'], [id, '45']];
-    if (other) seq.push([other, '10'], [id, '50']);
-    const cits = seq.map(([x, loc], k) => ({ citationID: 'seq' + k, citationItems: [{ id: x, locator: loc, label: 'page' }], properties: { noteIndex: k + 1 } }));
+    const { label, value } = curLoc();
+    // 数字の箇所なら、別の箇所は +3 と +8（頁なら 45・50）。文字の箇所（第二章など）は同じ値のまま。
+    const num = /^\d+$/.test(value);
+    const alt = num ? String(+value + 3) : value, far = num ? String(+value + 8) : value;
+    const seq = [[id, value, label], [id, value, label], [id, alt, label]];
+    if (other) seq.push([other, '10', 'page'], [id, far, label]);
+    const cits = seq.map(([x, loc, lab], k) => ({ citationID: 'seq' + k, citationItems: [{ id: x, locator: loc, label: lab }], properties: { noteIndex: k + 1 } }));
     const out = eng.rebuildProcessorState(cits, 'html');
     const txt = Object.fromEntries(out.map(([cid, , str]) => [cid, str]));
-    const rows = [['注（初出）', txt.seq0], ['続けて同じ頁', txt.seq1], ['続けて別の頁', txt.seq2]];
+    const rows = [['注（初出）', txt.seq0], ['続けて同じ箇所', txt.seq1], ['続けて別の箇所', txt.seq2]];
     if (other) rows.push(['間を挟んで', txt.seq4]);
     return rows;
   }
@@ -827,7 +838,11 @@
       h('option', { value: '', text: '著者：すべて' }),
       ...kinds.filter((k) => present.has(k) || k === who).map((k) => h('option', { value: k, text: '著者：' + k })));
     sel.value = who;
-    parts.push(sel, h('span', { class: 'muted', text: `${shown}/${total}件` }));
+    const loc = h('select', { class: 'small-sel', id: 'locSel', title: '引用箇所：Zotero で引用するときに選ぶ種類と値。注や本文中の引用をこれで組む',
+      onchange: (e) => { state.ui.loc = e.target.value; renderPreview(); save(); } },
+      ...LOCS.map(([k, l]) => h('option', { value: k, text: '引用箇所：' + l })));
+    loc.value = LOCS.some(([k]) => k === state.ui.loc) ? state.ui.loc : 'page:42';
+    parts.push(sel, loc, h('span', { class: 'muted', text: `${shown}/${total}件` }));
     box.replaceChildren(...parts);
     const empty = $('previewEmpty');
     if (empty) empty.hidden = shown > 0;
