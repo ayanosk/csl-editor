@@ -11,11 +11,11 @@ const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) =
   console.log('切り替え:', await p.evaluate(() => [...document.querySelectorAll('.seg button')].map(b => b.textContent).join(' | ')));
   const card = (t) => p.evaluate((t) => { const n = [...document.querySelectorAll('#previewList .item')].find(n => n.textContent.includes(t)); return [...n.querySelectorAll('.out .k')].map(k => k.textContent + '：' + k.nextElementSibling.textContent).join('\n  '); }, t);
   console.log(await card('デジタル史料学入門'));
-  // 2回目以降の並びで「前掲書」を足してみる：直前と同じ本タブで同上を「前掲」に変える代わりに、2回目以降タブを開いてチップを確認
+  // 2回目以降の並びで「前掲書」を足してみる：直前と同じ文書タブで同上を「前掲」に変える代わりに、2回目以降タブを開いてチップを確認
   await p.evaluate(() => [...document.querySelectorAll('.seg button')].find(b => b.textContent === '注（2回目以降）').click()); await wait(300);
   console.log('2回目以降のチップ:', await p.evaluate(() => [...document.querySelectorAll('#chipRow .chip')].map(c => c.textContent).join(' ')));
-  await p.evaluate(() => [...document.querySelectorAll('.seg button')].find(b => b.textContent === '注（直前と同じ本）').click()); await wait(300);
-  console.log('直前と同じ本のチップ:', await p.evaluate(() => [...document.querySelectorAll('#chipRow .chip')].map(c => c.textContent).join(' ')));
+  await p.evaluate(() => [...document.querySelectorAll('.seg button')].find(b => b.textContent === '注（直前と同じ文書）').click()); await wait(300);
+  console.log('直前と同じ文書のチップ:', await p.evaluate(() => [...document.querySelectorAll('#chipRow .chip')].map(c => c.textContent).join(' ')));
   await p.screenshot({ path: sp + '/v10_sub.png' });
   // 欧文
   await p.evaluate(() => [...document.querySelectorAll('#panelTabs button')].find(b => b.textContent === '欧文の書式').click()); await wait(300);

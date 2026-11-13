@@ -75,6 +75,9 @@ code { background: var(--accent-weak); padding: 0 4px; border-radius: 3px; }
 .brand { display: flex; flex-direction: column; line-height: 1.25; }
 .brand-name { font-weight: 700; font-size: 16px; }
 button.brand-name { border: none; background: none; padding: 0; color: inherit; cursor: pointer; text-align: left; }
+.sub-author { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.sub-author input { width: 8em; }
+.brand-icon { width: 22px; height: 22px; vertical-align: -5px; margin-right: 6px; border-radius: 5px; }
 button.brand-name:hover { color: var(--accent); }
 .beta { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 4px; background: var(--warn-bg); color: var(--warn-ink); font-size: 11px; font-weight: 600; vertical-align: 2px; }
 .brand-sub { font-size: 11px; color: var(--muted); }
@@ -88,6 +91,7 @@ button.brand-name:hover { color: var(--accent); }
 .site-footer { margin: 4px 16px 0; padding: 10px 0 20px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); line-height: 1.6; }
 .site-footer p { margin: 0 0 2px; }
 .site-footer b { color: var(--ink); font-weight: 600; }
+.site-footer .copyright { text-align: center; margin-top: 10px; }
 .site-footer a, .drop-zone a { color: var(--accent); }
 
 /* ---- 2段組 ---- */
@@ -168,8 +172,10 @@ table.terms input { width: 100%; }
 .badge { font-size: 11px; padding: 0 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); }
 .badge.sys-ja { border-color: var(--field-line); }
 .badge.sys-en { border-color: var(--sep-line); }
-.out { display: grid; grid-template-columns: 6.2em 1fr; gap: 2px 8px; }
+.out { display: grid; grid-template-columns: 9.5em 1fr; gap: 2px 8px; }
 .out .k { font-size: 11px; color: var(--muted); padding-top: 2px; }
+/* 注の見本の行は、名前の下に引いた箇所（42頁など）を添える */
+.out .k .at { display: block; white-space: nowrap; }
 .out .v { overflow-wrap: anywhere; }
 .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 5px; padding: 3px 8px; font-size: 12px; margin-top: 4px; }
 .error { background: var(--err-bg); color: var(--err-ink); border-radius: 6px; padding: 6px 10px; font-size: 12px; white-space: pre-wrap; }
@@ -233,3 +239,23 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
 .chip.grp { border-color: var(--sel); background: transparent; border-radius: 4px; padding: 4px 6px; color: var(--sel); font-weight: 700; }
 .palette .hint { margin: 0; align-self: center; }
 .chip.grp .grp-mark { font-size: 11px; }
+
+/* ---- 公式のスタイルの手直し ---- */
+.item.off .cslseg { cursor: pointer; border-radius: 3px; }
+.item.off .cslseg:hover { background: var(--accent-weak); }
+.item.off .cslseg.hl { background: var(--warn-bg); color: var(--warn-ink); box-shadow: 0 0 0 1px var(--warn-ink) inset; }
+.item.off { cursor: default; }
+.off-source { margin-bottom: 10px; }
+.mode-tab { font-weight: 700; }
+.tab-gap { display: inline-block; width: 1px; height: 1.4em; background: var(--line); margin: 0 6px; vertical-align: middle; }
+.rebuild-banner { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--panel); }
+.rebuild-diffs summary { cursor: pointer; font-size: 13px; margin: 4px 0; }
+.rebuild-diff { border-top: 1px solid var(--line); padding: 6px 0; font-size: 13px; overflow-wrap: anywhere; }
+.off-empty { border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; margin: 8px 0 14px; }
+.off-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 6px 0 2px; font-size: 12px; }
+.off-crumbs .crumb { border: 1px solid var(--line); background: var(--panel); border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+.off-crumbs .crumb.on { border-color: var(--accent); background: var(--accent-weak); font-weight: 600; }
+.off-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.off-actions .danger { color: var(--err-ink); }
+.off-edits { list-style: none; padding: 0; margin: 4px 0 8px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.off-edits li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

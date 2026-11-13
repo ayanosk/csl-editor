@@ -3,6 +3,8 @@
   'use strict';
   const G = window.CSLGen;
   const ST = window.CSLStarters;
+  const O = window.CSLOfficial;
+  const CV = window.CSLConvert;
   const LOCALES = window.CSL_LOCALES;
   const SAMPLES = window.CSL_SAMPLES;
   const STORE_KEY = 'csl-editor-v1';
@@ -13,6 +15,8 @@
     items: null,
     source: '見本データ',
     hidden: [], // 隠した文献の id。データには残し、プレビューと組版から外す
+    mode: 'chips', // chips＝型から組む／official＝公式のスタイルを手直しする
+    official: null, // { xml: 元の CSL, edits: 編集の一覧, title, id, source: 元のスタイルの名前 }
     ui: { panel: 'ja', target: 'bib', tab: 'book', sel: null, filter: 'auto', loc: 'page:42' },
   };
   let uidN = 0;
@@ -60,6 +64,9 @@
   function upgradeModel(m) {
     if (m.kind === 'note' && m.subsequent === undefined) m.subsequent = true;
     if (m.kind === 'note' && m.subsequent) ST.ensureSubsequent(m);
+    // 和文の「ほか」の前に区切りを入れない（以前の型は指定が無く、「長岡・ほか」になっていた）。
+    const jaNames = m.systems && m.systems.ja && m.systems.ja.names;
+    if (jaNames && jaNames.precedesEtAl === undefined) jaNames.precedesEtAl = 'never';
     return m;
   }
   function freshModel(key) {
@@ -82,7 +89,7 @@
 
   function save() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ model: state.model, items: state.items, source: state.source, hidden: state.hidden, ui: state.ui }));
+      localStorage.setItem(STORE_KEY, JSON.stringify({ model: state.model, items: state.items, source: state.source, hidden: state.hidden, ui: state.ui, mode: state.mode, official: state.official }));
     } catch (e) { /* 保存できない環境でも動かす */ }
   }
   function load() {
@@ -97,11 +104,15 @@
       state.hidden = Array.isArray(s.hidden) ? s.hidden.map(String) : [];
       Object.assign(state.ui, s.ui || {});
       ensureUids(state.model);
+      if (s.mode === 'official' && s.official && s.official.xml) {
+        try { offBase = O.parse(s.official.xml); state.mode = 'official'; state.official = s.official; } catch (e) { state.mode = 'chips'; }
+      }
       return true;
     } catch (e) { return false; }
   }
 
   function changed(opts = {}) {
+    if (state.mode === 'official') { schedulePreview(); save(); return; }
     if (opts.row !== false) renderChipRow();
     if (opts.detail) renderDetail();
     schedulePreview();
@@ -118,10 +129,9 @@
   const WRAP_LABELS = {
     none: 'なし', nijukagi: '『　』', kagi: '「　」', dquote: '“　”', paren: '（　）', hparen: '(　)', bracket: '[　]',
   };
-  function termOf(key) {
-    const t = (state.model.terms || {})[state.ui.panel] || {};
-    return t[key] || '';
-  }
+  function termOf(key) { return termOfSys(state.ui.panel, key); }
+  // 部品 → 添える用語（巻・号・頁・版・引用箇所・参照日）
+  const LABEL_TERM = { volume: 'volume', issue: 'issue', page: 'page', locator: 'page', edition: 'edition', accessed: 'accessed' };
   function fieldLabel(c) {
     if (c.t === 'open') return 'まとまりの始め〔';
     if (c.t === 'close') return 'まとまりの終わり〕';
@@ -150,8 +160,7 @@
       tags.push((opt.role === 'before' ? '前に「' : '後に「') + term + '」');
     }
     if (opt.label && opt.label !== 'none') {
-      const key = { volume: 'volume', issue: 'issue', page: 'page', locator: 'page', edition: 'edition', accessed: 'accessed' }[c.f];
-      tags.push((opt.label === 'before' ? '前に「' : '後に「') + termOf(key) + '」');
+      tags.push((opt.label === 'before' ? '前に「' : '後に「') + termOf(LABEL_TERM[c.f]) + '」');
     }
     if (opt.form === 'short') tags.push(c.f === 'author' || c.f === 'editor' || c.f === 'translator' ? '姓だけ' : '略記');
     if (opt.order === 'family') tags.push('姓, 名');
@@ -168,6 +177,8 @@
 
   // ---- 左：パネル ---------------------------------------------------------------
   function sysKeys() { return ['ja', 'en', ...G.extraLangs(state.model)]; }
+  // 文献の言語欄から、どの書式で組むか（{ sys, warn }）
+  function sysOf(it) { return G.systemOfItem(it, state.model.euroLangs, G.extraLangs(state.model)); }
   function isFormatPanel(k) { return sysKeys().includes(k); }
   function sysName(k) { return ST.langName(k); }
   // プレビューの札に出す短い名前（和文・欧文・fr など）。
@@ -180,6 +191,8 @@
 
   // 左のパネルを描き直す。書式のパネルなら、チップの列と詳細も描く。
   function renderPanels() {
+    syncModeUi();
+    if (state.mode === 'official') { drawOfficialPanel(); return; }
     drawPanels();
     renderChipRow();
     renderDetail();
@@ -198,6 +211,72 @@
     if (state.ui.panel === 'terms') body.replaceChildren(termsPanel());
     else if (state.ui.panel === 'settings') body.replaceChildren(settingsPanel());
     else body.replaceChildren(formatPanel());
+    if (isRebuilt()) {
+      tabs.prepend(...modeTabs('rebuild'), h('span', { class: 'tab-gap' }));
+      body.prepend(rebuildBanner());
+    }
+  }
+
+  // ---- 公式のスタイルの大幅修正（部品で組み直す） ---------------------------------------
+  // 微調整：元の CSL に手を入れる（state.mode = 'official'）。
+  // 大幅修正：元の CSL を部品（チップ）に移し、型から組む画面と同じに直す（state.mode = 'chips'、model.source.kind = 'official'）。
+  // 移した内容は state.model に残るので、微調整に戻っても、もう一度「大幅修正」を開けば続きから直せる。
+  function isRebuilt() { return !!(state.model && state.model.source && state.model.source.kind === 'official'); }
+  function modeTabs(cur) {
+    const tab = (k, label, title, onclick) => h('button', { type: 'button', role: 'tab', class: 'mode-tab', 'aria-selected': String(cur === k), title, onclick: cur === k ? null : onclick }, label);
+    return [
+      tab('fine', '微調整', state.official ? '元のスタイルの書き方に、そのまま手を入れます' : '書き出したファイルから続きを直しているので、微調整には戻れません', () => backToFine()),
+      tab('rebuild', '大幅修正', '元のスタイルを部品に移し、資料の種類ごとに自由に組み直します', () => openRebuild()),
+    ];
+  }
+  function openRebuild() {
+    const off = state.official;
+    if (!off) return;
+    const cont = isRebuilt() && state.model.source.from === off.id;
+    if (!(cont && confirm('前に組み直した続きを開きます。\n［キャンセル］を押すと、いまの微調整から組み直します（前に組み直した内容は消えます）。'))) {
+      const xml = O.serialize(O.apply(offBase, off.edits));
+      let r;
+      try { r = CV.convert(window.CSL, xml, SAMPLES, retrieveLocale); } catch (e) { alert('このスタイルは部品に移せませんでした。微調整で直してください。\n' + e.message); return; }
+      const m = r.model;
+      const bad = r.report.checks.filter((c) => !c.same);
+      m.info = { ...(m.info || {}), title: off.title, id: off.id };
+      m.source.from = off.id;
+      m.source.report = { total: r.report.checks.length, same: r.report.checks.length - bad.length, dropped: r.report.dropped, diffs: bad.slice(0, 40) };
+      state.model = upgradeModel(m);
+      ensureUids(state.model);
+      toast(`部品に移しました。見本の出力 ${m.source.report.same}/${m.source.report.total} 件が元のスタイルと同じです`);
+    }
+    state.mode = 'chips';
+    state.ui.panel = 'en'; state.ui.sel = null;
+    setTitleField(curInfo().title);
+    renderPanels(); renderPreview(); save();
+  }
+  function backToFine() {
+    if (!state.official) return;
+    state.mode = 'official';
+    state.ui.osel = null;
+    setTitleField(state.official.title);
+    renderPanels(); renderPreview(); save();
+  }
+  const PLACE_JA = { bib: '参考文献', cite: '注（初出）・本文中の引用', citeSub: '2回目以降の注', citeIbid: '直前と同じ文書の注' };
+  function rebuildBanner() {
+    const src = state.model.source;
+    const rep = src.report || {};
+    const box = h('div', { class: 'off-source rebuild-banner' },
+      h('div', {}, h('span', { class: 'muted small', text: 'もとにしたスタイル：' }), h('b', { text: src.title || '' })),
+      h('p', { class: 'hint', text: '公式のスタイルを部品に移しました。欧文の書式が元のスタイルです。部品の追加・削除・並べ替え、資料の種類ごとの編集、和文の書式（多言語版）、用語表が使えます。' }));
+    if (rep.total) {
+      box.append(h('p', { class: rep.same === rep.total ? 'hint' : 'warn', text: `見本の出力 ${rep.same}/${rep.total} 件が、元のスタイルと同じです。` + (rep.same === rep.total ? '' : '違う見本は、下の一覧を見て部品で直してください。') }));
+      if (rep.diffs && rep.diffs.length) {
+        box.append(h('details', { class: 'rebuild-diffs' }, h('summary', { text: `元のスタイルと違う見本（${rep.total - rep.same}件）` }),
+          ...rep.diffs.map((d) => h('div', { class: 'rebuild-diff' },
+            h('div', { class: 'muted small', text: `${G.cslTypeLabel(d.type)}・${PLACE_JA[d.place] || d.place}` }),
+            h('div', {}, h('span', { class: 'muted small', text: '元　　：' }), d.original),
+            h('div', {}, h('span', { class: 'muted small', text: '組み直し：' }), d.converted)))));
+      }
+    }
+    if (rep.dropped && rep.dropped.length) box.append(h('p', { class: 'muted small', text: `部品に移せなかった書き方：${rep.dropped.join('、')}` }));
+    return box;
   }
 
   function citeTargetLabel() {
@@ -208,7 +287,7 @@
     const sk = state.ui.panel;
     const counts = itemCounts();
     const targets = [['bib', '参考文献'], ['cite', citeTargetLabel()]];
-    if (hasSubsequent()) targets.push(['citeSub', '注（2回目以降）'], ['citeIbid', '注（直前と同じ本）']);
+    if (hasSubsequent()) targets.push(['citeSub', '注（2回目以降）'], ['citeIbid', '注（直前と同じ文書）']);
     if (!targets.some(([k]) => k === state.ui.target)) state.ui.target = 'cite';
     const seg = h('div', { class: 'seg' },
       ...targets.map(([k, label]) => h('button', {
@@ -233,7 +312,7 @@
         ' ', h('button', { type: 'button', onclick: () => copyChips('bib', '参考文献') }, '参考文献の並びを写す')));
     } else if (state.ui.target === 'citeSub') {
       extra.push(h('p', { class: 'hint' },
-        '間に別の注を挟んで、同じ本をもう一度引いたときの並びです（短縮形）。著者は「姓だけ」、題名は「短い形」にするのが一般的です。短い形には Zotero の「短いタイトル」欄が使われ、空なら題名がそのまま出ます。「前掲書」などは「任意の文字」で足せます。',
+        '間に別の注を挟んで、同じ文書をもう一度引いたときの並びです（短縮形）。著者は「姓だけ」、題名は「短い形」にするのが一般的です。短い形には Zotero の「短いタイトル」欄が使われ、空なら題名がそのまま出ます。「前掲書」などは「任意の文字」で足せます。',
         ' ', h('button', { type: 'button', onclick: () => copyChips('cite', '注（初出）') }, '注（初出）の並びを写す')),
         h('p', { class: 'hint' }, '型を選ぶ（この書式の全種類を置き換えます）：',
           ...(sk === 'ja'
@@ -242,7 +321,7 @@
             .map(([k, label]) => h('button', { type: 'button', class: 'small-btn', onclick: () => applySubPreset(k, label) }, label))));
     } else if (state.ui.target === 'citeIbid') {
       extra.push(h('p', { class: 'hint' },
-        '直前の注と同じ本を引いたときの並びです。箇所が違えば引用箇所が付き（「同上、45頁。」）、箇所も同じなら引用箇所は自動で消えます（「同上。」）。「同上」を使わない書き方にするときは、2回目以降の並びを写してください。',
+        '直前の注と同じ文書を引いたときの並びです。箇所が違えば引用箇所が付き（「同上、45頁。」）、箇所も同じなら引用箇所は自動で消えます（「同上。」）。「同上」を使わない書き方にするときは、2回目以降の並びを写してください。',
         ' ', h('button', { type: 'button', onclick: () => copyChips('citeSub', '注（2回目以降）') }, '注（2回目以降）の並びを写す')));
     }
     // 上に資料の種類（図書・本の章…）、その下に書く場所（参考文献・注…）。プレビューの並びと同じ順。
@@ -419,7 +498,8 @@
       .filter(([k]) => k !== 'citation-number' || kind === 'numeric')
       .map(([k, d]) => h('button', {
         type: 'button', title: '選んだ部品の後ろ（無ければ末尾）に足す',
-        onclick: () => insertChip(ST.F(k, k === 'literal' ? { opt: { value: '' } } : {})),
+        // DOI は、いまの主なスタイルの標準（https://doi.org/10.…）で足す。書き方は部品の設定で選び直せる。
+        onclick: () => insertChip(ST.F(k, k === 'literal' ? { opt: { value: '' } } : k === 'DOI' ? { prefix: 'https://doi.org/' } : {})),
       }, d.label));
     const custom = h('input', { type: 'text', placeholder: '自由入力', 'aria-label': '区切りの自由入力' });
     const sepBtns = SEP_CHOICES.map(([v, label]) => h('button', { type: 'button', onclick: () => insertChip(ST.S(v)) }, label));
@@ -433,6 +513,15 @@
   }
 
   // ---- 選んだチップの詳細 -----------------------------------------------------------
+  // DOI の書き方（前に付ける文字）。Zotero の DOI 欄は「10.」から始まる番号だけを持つ。
+  const DOI_FORMS = [
+    ['https://doi.org/', 'https://doi.org/10.1234/…（APA・Chicago・MLA の現行版）'],
+    ['doi:', 'doi:10.1234/…'],
+    ['doi: ', 'doi: 10.1234/…（IEEE など）'],
+    ['DOI: ', 'DOI: 10.1234/…'],
+    ['', '10.1234/…（番号だけ）'],
+    ['custom', 'その他（下の「前に付ける文字」のとおり）'],
+  ];
   function renderDetail() {
     const box = $('detail');
     if (!box) return;
@@ -482,6 +571,18 @@
     c.opt = c.opt || {};
     const o = c.opt;
     if (def.kind === 'literal') add('文字', text(() => o.value, (v) => { o.value = v; }));
+    if (c.f === 'DOI') {
+      // DOI の書き方は決まった形のどれかなので、選べば「前に付ける文字」に入る。前置き（「, 」など）は残す。
+      const pre = c.prefix || '';
+      const hit = DOI_FORMS.map(([v]) => v).filter(Boolean).sort((a, b) => b.length - a.length).find((v) => pre.endsWith(v));
+      const lead = hit ? pre.slice(0, -hit.length) : '';
+      const cur = hit || (pre === '' ? '' : 'custom');
+      add('DOI の書き方', select(DOI_FORMS.filter(([v]) => v !== 'custom' || cur === 'custom'), () => cur, (v) => {
+        if (v === 'custom') return;
+        c.prefix = (hit ? lead : '') + v;
+        renderDetail();
+      }));
+    }
     add('前に付ける文字', text(() => c.prefix, (v) => { c.prefix = v; }));
     add('後ろに付ける文字', text(() => c.suffix, (v) => { c.suffix = v; }));
     add('括弧', select(Object.entries(WRAP_LABELS), () => c.wrap || 'none', (v) => { c.wrap = v; }));
@@ -503,7 +604,7 @@
     if (def.hasForm) add('表記', select([['long', '全形'], ['short', '略記（Zotero の略記の欄）']], () => o.form || 'long', (v) => { o.form = v; }));
     if (def.kind === 'date') add('日付の形', select([['year', '年だけ'], ['ym', '年月'], ['ymd', '年月日'], ['numeric', '数字だけ']], () => o.form || 'year', (v) => { o.form = v; }));
     if (def.term) {
-      const termKey = { volume: 'volume', issue: 'issue', page: 'page', locator: 'page', edition: 'edition', accessed: 'accessed' }[c.f];
+      const termKey = LABEL_TERM[c.f];
       add('用語', select([['none', '付けない'], ['after', `後ろに付ける（「${termOf(termKey)}」）`], ['before', `前に付ける（「${termOf(termKey)}」）`]], () => o.label || 'none', (v) => { o.label = v; }));
     }
     const hints = [];
@@ -535,7 +636,9 @@
     add('人名の間の区切り', inp(n, 'delimiter'));
     add('最後の人名の前', sel(n, 'and', [['none', '何も入れない'], ['text', '用語表の「最後の人名の前」'], ['symbol', '&']]));
     add('人数が多いとき', h('span', {}, inp(n, 'etAlMin', 'number'), ' 人以上なら、最初の ', inp(n, 'etAlUseFirst', 'number'), ' 人＋「', termOfSys(sk, 'et-al'), '」'));
+    add('「' + (termOfSys(sk, 'et-al') || 'ほか') + '」の前', sel(n, 'precedesEtAl', [['never', '区切りを入れない'], ['contextual', '2人以上出すときだけ区切りを入れる'], ['always', 'いつも区切りを入れる']]));
     add('欧文の名', h('label', {}, h('input', { type: 'checkbox', checked: !!n.initialize, onchange: (e) => { n.initialize = e.target.checked; changed({ row: false }); } }), ' 頭文字にする（J. Smith）'));
+    if (sk !== 'ja') add('欧文の姓', sel(n, 'familyCase', [['', 'そのまま（Dubois）'], ['uppercase', 'すべて大文字（DUBOIS）'], ['small-caps', 'スモールキャピタル（頭だけ大きく、残りは小さな大文字）']]));
     add('参考文献の文末', inp(S.layout.bib, 'suffix'));
     if (state.model.kind === 'note') add('注の文末', inp(S.layout.cite, 'suffix'));
     return h('div', { class: 'card' },
@@ -578,7 +681,7 @@
         m.subsequent = e.target.checked;
         if (m.subsequent) { ST.ensureSubsequent(m); ensureUids(m); }
         renderPanels(); changed({ row: false });
-      } }), ' 書き分ける（間を挟んだら短縮形、直前と同じ本なら「同上」）'));
+      } }), ' 書き分ける（間を挟んだら短縮形、直前と同じ文書なら「同上」）'));
     } else {
       add('本文中の引用の括弧', h('span', {}, '前 ', inp(cl, 'prefix'), '　後 ', inp(cl, 'suffix'), '　複数の区切り ', inp(cl, 'delimiter')));
     }
@@ -589,6 +692,26 @@
     if (m.kind !== 'numeric') {
       add('参考文献の並び', h('label', {}, h('input', { type: 'checkbox', checked: !!m.sortByLanguage, onchange: (e) => { m.sortByLanguage = e.target.checked; changed({ row: false }); } }), ' 和文を先に、欧文を後にまとめる'));
     }
+    // 同じ著者の2件目以降（MLA の「———.」など）。CSL の bibliography の subsequent-author-substitute。
+    {
+      const B = m.bibAttrs = m.bibAttrs || {};
+      const SUB = 'subsequent-author-substitute', RULE = 'subsequent-author-substitute-rule';
+      const set = (k, v) => { if (v) B[k] = v; else delete B[k]; changed({ row: false }); };
+      const rule = h('select', { onchange: (e) => set(RULE, e.target.value === 'complete-all' ? '' : e.target.value) },
+        ...[['complete-all', '著者が全員同じときだけ、まとめて置き換える'], ['complete-each', '著者が全員同じとき、1人ずつ置き換える'],
+          ['partial-each', '先頭から同じ著者を、1人ずつ置き換える'], ['partial-first', '先頭の著者が同じなら、その1人だけ置き換える']]
+          .map(([v, l]) => h('option', { value: v, text: l })));
+      rule.value = B[RULE] || 'complete-all';
+      // ダッシュは自分で入力しにくいので、押せば入るようにする（——— は MLA、—— は MHRA など）
+      const subInp = h('input', { type: 'text', value: B[SUB] || '', placeholder: '空ならそのまま（例：———）', oninput: (e) => set(SUB, e.target.value) });
+      const put = (v) => { subInp.value = v; set(SUB, v); };
+      add('同じ著者の2件目以降', h('span', { class: 'sub-author' },
+        subInp,
+        h('button', { type: 'button', class: 'small-btn', title: 'ダッシュ3つ（MLA など）', onclick: () => put('———') }, '———'),
+        h('button', { type: 'button', class: 'small-btn', title: 'ダッシュ2つ（MHRA など）', onclick: () => put('——') }, '——'),
+        h('button', { type: 'button', class: 'small-btn', title: '置き換えずに、毎回著者名を書く', onclick: () => put('') }, '消す'),
+        ' ', rule));
+    }
     add('引用符と句読点', h('label', {}, h('input', { type: 'checkbox', checked: m.punctuationInQuote !== false, onchange: (e) => { m.punctuationInQuote = e.target.checked; changed({ row: false }); } }), ' “ ” の内側に . , を入れる（米国式）'));
     add('スタイルの ID', h('span', {}, h('code', { text: m.info.id }), ' ', h('button', {
       type: 'button', onclick: () => { m.info.id = newStyleId(); renderPanels(); changed({ row: false }); },
@@ -597,6 +720,7 @@
       grid,
       langCard(),
       h('p', { class: 'hint', text: '欧文の書式で組む言語は、Zotero の「言語」欄に入る言語コード（en fr de など）を空白で区切って並べます。先頭の言語（ふつうは en）の用語が使われます。言語ごとの書式を足した言語は、ここに並べなくてもその書式で組みます。どこにも無い言語の文献と、言語欄が空の文献は、和文の書式で組みます。' }),
+      h('p', { class: 'hint', text: '同じ著者の2件目以降：参考文献で、直前の文献と著者が同じときに、著者名を入れた文字（——— など）で置き換えます。空にすると、毎回著者名を書きます。' }),
       h('p', { class: 'hint', text: 'スタイルの ID は、Zotero がスタイルを見分ける名札です。公式スタイルと同じ ID にすると、元のスタイルが上書きされます。自分の版を別に残したいときは「振り直す」を押してから書き出してください。' }));
   }
 
@@ -645,14 +769,14 @@
   function itemCounts() {
     const counts = {};
     for (const it of visibleItems()) {
-      const { sys } = G.systemOfItem(it, state.model.euroLangs, G.extraLangs(state.model));
+      const { sys } = sysOf(it);
       const k = sys + '|' + G.tabOfType(it.type, state.model);
       counts[k] = (counts[k] || 0) + 1;
     }
     return counts;
   }
   function langWarning(it) {
-    const r = G.systemOfItem(it, state.model.euroLangs, G.extraLangs(state.model));
+    const r = sysOf(it);
     const v = (it.language || '').trim();
     if (!r.warn && r.sys !== 'ja' && r.sys !== 'en' && !ST.BUNDLED_LOCALES.includes(r.sys)) {
       return `このアプリには「${r.sys}」の言語の設定が無いので、プレビューの月名や引用符は英語で出ます。Zotero では${sysName(r.sys)}の形で出ます。`;
@@ -692,11 +816,10 @@
   }
 
   function renderPreview() {
+    if (state.mode === 'official') { renderOfficialPreview(); return; }
     const items = visibleItems();
     const hiddenItems = currentItems().filter((i) => state.hidden.includes(String(i.id)));
-    $('dataSource').textContent = `${state.source}・${items.length}件` + (hiddenItems.length ? `（ほかに隠した文献 ${hiddenItems.length}件）` : '');
-    $('btnResetItems').hidden = state.items === null && !state.hidden.length;
-    $('btnAddItem').textContent = usingSamples() ? '見本の書誌を編集する' : '書誌を編集する';
+    previewHeader(items, hiddenItems);
     const errBox = $('previewError');
     let xml, eng, bib;
     try {
@@ -724,37 +847,32 @@
       .sort((a, b) => a.t - b.t || a.n - b.n || a.k - b.k).map((x) => x.id);
     const nodes = all.map((id) => {
       const it = byId[id];
-      const { sys } = G.systemOfItem(it, state.model.euroLangs, G.extraLangs(state.model));
+      const { sys } = sysOf(it);
       const tab = G.tabOfType(it.type, state.model);
       let cite = '';
       let citeRows = null;
       try {
         if (hasSubsequent()) citeRows = noteSequence(eng, id, items);
         else cite = eng.makeCitationCluster([{ id, locator: curLoc().value, label: curLoc().label }]);
-      } catch (e) { cite = '（組めませんでした）'; citeRows = null; }
+      } catch (e) { cite = '（組めませんでした）'; }
       const warn = langWarning(it);
-      const card = h('div', { class: 'item', 'data-sys': sys, 'data-tab': tab, 'data-authors': authorCountLabel(it), title: '押すと、この文献の書式を編集します',
+      const card = h('div', { class: 'item', 'data-id': id, 'data-sys': sys, 'data-tab': tab, 'data-authors': authorCountLabel(it), title: '押すと、この文献の書式を編集します',
         onclick: () => { state.ui.panel = sys; state.ui.tab = tab; state.ui.sel = null; renderPanels(); renderPreviewHighlight(); save(); } },
         h('div', { class: 'meta' },
           h('span', { class: 'badge', text: tabLabel[tab] + (tab === 'other' || !(MAIN_TYPES.includes(it.type) || tab.startsWith('x-')) ? `（${G.cslTypeLabel(it.type || '')}）` : '') }),
           h('span', { class: 'badge sys-' + (sys === 'ja' ? 'ja' : 'en'), text: sysBadge(sys) }),
           h('span', { class: 'badge', text: authorCountLabel(it) }),
           h('span', { class: 'spacer' }),
-          h('button', { type: 'button', class: 'small-btn', onclick: (e) => { e.stopPropagation(); openItemEditor(id); } }, '直す'),
-          h('button', { type: 'button', class: 'small-btn', title: 'プレビューに出さないようにします。データは残り、下の「隠した文献」から戻せます', onclick: (e) => { e.stopPropagation(); hideItem(id); } }, '隠す')),
+          ...itemButtons(id)),
         h('div', { class: 'out' },
           h('span', { class: 'k', text: '参考文献' }), h('span', { class: 'v', html: bibById[id] ? stripDiv(bibById[id]) : '<span class="muted">（参考文献に出ません）</span>' }),
           ...(citeRows
-            ? citeRows.flatMap(([k, v]) => [h('span', { class: 'k', text: k }), h('span', { class: 'v', html: v })])
+            ? citeRows.flatMap(([k, at, v]) => [h('span', { class: 'k' }, k, h('span', { class: 'at', text: at })), h('span', { class: 'v', html: v })])
             : [h('span', { class: 'k', text: state.model.kind === 'note' ? '注' : '本文中' }), h('span', { class: 'v', html: cite })])),
         warn ? h('div', { class: 'warn', text: warn }) : null);
       return card;
     });
-    const hiddenBox = hiddenItems.length ? h('details', { class: 'hidden-items' },
-      h('summary', { text: `隠した文献 ${hiddenItems.length}件` }),
-      h('ul', {}, ...hiddenItems.map((it) => h('li', {},
-        h('span', { text: itemSummary(it) }),
-        h('button', { type: 'button', class: 'small-btn', onclick: () => unhideItem(it.id) }, '戻す'))))) : null;
+    const hiddenBox = hiddenBoxOf(hiddenItems);
     $('previewList').replaceChildren(...nodes, h('p', { id: 'previewEmpty', class: 'muted small', hidden: true,
       text: '条件に合う文献がありません。絞り込みを変えるか、「書誌を編集する」から「新しく入れる」で入れてみてください（言語ごとの書式なら、言語欄をその言語にします）。' }), hiddenBox || '');
     renderPreviewHighlight();
@@ -771,13 +889,57 @@
   }
   // プレビューで引く箇所（Zotero で引用するときに選ぶ種類と値）。
   const LOCS = [['page:42', '頁 42'], ['page:42-45', '頁 42-45'], ['chapter:2', '章 2'], ['chapter:第二章', '章 第二章'], ['chapter:2章2節', '章 2章2節'], ['section:3', '節 3']];
+  function curLocKey() { return LOCS.some(([k]) => k === state.ui.loc) ? state.ui.loc : 'page:42'; }
   function curLoc() {
-    const v = LOCS.some(([k]) => k === state.ui.loc) ? state.ui.loc : 'page:42';
+    const v = curLocKey();
     const i = v.indexOf(':');
     return { label: v.slice(0, i), value: v.slice(i + 1) };
   }
-  // 同じ本を何度か引いたときの注を、続けて組んで見せる。
-  // 注1：初出（42頁）／注2：直前と同じ本・同じ頁／注3：直前と同じ本・別の頁（45頁）／注4：別の本／注5：間を挟んで同じ本（50頁）。
+  // ---- プレビューの部品（型から組む画面と、公式のスタイルの微調整で共通） ---------------------
+  const AUTHOR_KINDS = ['単著', '2〜3名共著', '4名以上の共著', '著者なし（編者あり）', '著者なし'];
+  // 著者の人数の絞り込み。いまのプレビューにある人数だけを選択肢に出す。
+  function authorSelect(who, rerender) {
+    const present = new Set([...document.querySelectorAll('#previewList .item')].map((n) => n.dataset.authors));
+    const sel = h('select', { class: 'small-sel', title: '著者の人数で絞り込む',
+      onchange: (e) => { state.ui.authors = e.target.value; rerender(); save(); } },
+      h('option', { value: '', text: '著者：すべて' }),
+      ...AUTHOR_KINDS.filter((k) => present.has(k) || k === who).map((k) => h('option', { value: k, text: '著者：' + k })));
+    sel.value = who;
+    return sel;
+  }
+  function locSelect() {
+    const loc = h('select', { class: 'small-sel', id: 'locSel', title: '引用箇所：Zotero で引用するときに選ぶ種類と値。注や本文中の引用をこれで組む',
+      onchange: (e) => { state.ui.loc = e.target.value; renderPreview(); save(); } },
+      ...LOCS.map(([k, l]) => h('option', { value: k, text: '引用箇所：' + l })));
+    loc.value = curLocKey();
+    return loc;
+  }
+  // 見出しの件数（見本データ・24件（ほかに隠した文献 2件））
+  function sourceText(items, hiddenItems) {
+    return `${state.source}・${items.length}件` + (hiddenItems.length ? `（ほかに隠した文献 ${hiddenItems.length}件）` : '');
+  }
+  // 見出しの件数と、書誌を編集するボタンの表示
+  function previewHeader(items, hiddenItems, extra) {
+    $('dataSource').textContent = sourceText(items, hiddenItems) + (extra || '');
+    $('btnResetItems').hidden = state.items === null && !state.hidden.length;
+    $('btnAddItem').textContent = usingSamples() ? '見本の書誌を編集する' : '書誌を編集する';
+  }
+  function itemButtons(id) {
+    return [
+      h('button', { type: 'button', class: 'small-btn', onclick: (e) => { e.stopPropagation(); openItemEditor(id); } }, '直す'),
+      h('button', { type: 'button', class: 'small-btn', title: 'プレビューに出さないようにします。データは残り、下の「隠した文献」から戻せます', onclick: (e) => { e.stopPropagation(); hideItem(id); } }, '隠す'),
+    ];
+  }
+  function hiddenBoxOf(hiddenItems) {
+    return hiddenItems.length ? h('details', { class: 'hidden-items' },
+      h('summary', { text: `隠した文献 ${hiddenItems.length}件` }),
+      h('ul', {}, ...hiddenItems.map((it) => h('li', {},
+        h('span', { text: itemSummary(it) }),
+        h('button', { type: 'button', class: 'small-btn', onclick: () => unhideItem(it.id) }, '戻す'))))) : null;
+  }
+
+  // 同じ文書を何度か引いたときの注を、続けて組んで見せる。
+  // 注1：初出（42頁）／注2：直後に同じ文書の同じ頁／注3：直後に同じ文書の別の頁（45頁）／注4：別の文書／注5：別の文書を挟んで同じ文書（50頁）。
   function noteSequence(eng, id, items) {
     const other = (items.find((i) => i.id !== id) || {}).id;
     const { label, value } = curLoc();
@@ -789,8 +951,12 @@
     const cits = seq.map(([x, loc, lab], k) => ({ citationID: 'seq' + k, citationItems: [{ id: x, locator: loc, label: lab }], properties: { noteIndex: k + 1 } }));
     const out = eng.rebuildProcessorState(cits, 'html');
     const txt = Object.fromEntries(out.map(([cid, , str]) => [cid, str]));
-    const rows = [['注（初出）', txt.seq0], ['続けて同じ箇所', txt.seq1], ['続けて別の箇所', txt.seq2]];
-    if (other) rows.push(['間を挟んで', txt.seq4]);
+    // 行は［名前, 引いた箇所, 出力］。箇所は折り返さない一塊で添える。単位（頁・章・節）は引用箇所の種類に合わせる。
+    const unit = { page: '頁', chapter: '章', section: '節' }[label] || '箇所';
+    const at = (v) => (!/^\d+$/.test(v) ? v : label === 'page' ? v + '頁' : `第${v}${unit}`);
+    const rows = [['注（初出）', `（${at(value)}）`, txt.seq0], [`直後に同じ文書の同じ${unit}`, `（${at(value)}）`, txt.seq1],
+      [`直後に同じ文書の別の${unit}`, `（${at(alt)}）`, txt.seq2]];
+    if (other) rows.push(['別の文書を挟んで同じ文書', `（${at(far)}）`, txt.seq4]);
     return rows;
   }
   // 著者の人数。人名の区切り・「ほか」の略し方の違いを見比べるための札。
@@ -805,6 +971,7 @@
   // プレビューは、いま開いている書式（和文・欧文・fr など）の文献だけを出すのが既定。
   // 用語表と全体の設定を開いているときは全部出す。「すべて表示」で切り替えられる。
   function renderPreviewHighlight() {
+    if (state.mode === 'official') { offFilter(); return; }
     const { panel, tab } = state.ui;
     // 言語の絞り込み：auto＝いま開いている書式に合わせる（用語表・全体の設定では全部）、all＝全部、sys:ja など＝その書式だけ。
     let f = state.ui.filter || 'auto';
@@ -831,18 +998,7 @@
       ...sysKeys().map((k) => h('option', { value: 'sys:' + k, text: '言語：' + sysLabel(k) })));
     lang.value = f;
     parts.push(lang);
-    const kinds = ['単著', '2〜3名共著', '4名以上の共著', '著者なし（編者あり）', '著者なし'];
-    const present = new Set([...document.querySelectorAll('#previewList .item')].map((n) => n.dataset.authors));
-    const sel = h('select', { class: 'small-sel', title: '著者の人数で絞り込む',
-      onchange: (e) => { state.ui.authors = e.target.value; renderPreviewHighlight(); save(); } },
-      h('option', { value: '', text: '著者：すべて' }),
-      ...kinds.filter((k) => present.has(k) || k === who).map((k) => h('option', { value: k, text: '著者：' + k })));
-    sel.value = who;
-    const loc = h('select', { class: 'small-sel', id: 'locSel', title: '引用箇所：Zotero で引用するときに選ぶ種類と値。注や本文中の引用をこれで組む',
-      onchange: (e) => { state.ui.loc = e.target.value; renderPreview(); save(); } },
-      ...LOCS.map(([k, l]) => h('option', { value: k, text: '引用箇所：' + l })));
-    loc.value = LOCS.some(([k]) => k === state.ui.loc) ? state.ui.loc : 'page:42';
-    parts.push(sel, loc, h('span', { class: 'muted', text: `${shown}/${total}件` }));
+    parts.push(authorSelect(who, renderPreviewHighlight), locSelect(), h('span', { class: 'muted', text: `${shown}/${total}件` }));
     box.replaceChildren(...parts);
     const empty = $('previewEmpty');
     if (empty) empty.hidden = shown > 0;
@@ -1031,17 +1187,18 @@
   }
   // 一覧の1行：〔図書・和文〕山田花子『デジタル史料学入門』2024
   function itemSummary(it) {
-    const { sys } = G.systemOfItem(it, state.model.euroLangs, G.extraLangs(state.model));
+    const { sys } = sysOf(it);
+    // tabOfType は tabsOf にある鍵（無ければ「その他」）を返すので、tab は必ず見つかる
     const tab = G.tabsOf(state.model).find((t) => t.key === G.tabOfType(it.type, state.model));
     const who = (it.author || it.editor || []).map((n) => n.literal || n.family || '').filter(Boolean);
     const y = it.issued && it.issued['date-parts'] ? it.issued['date-parts'][0][0] : '';
-    return `〔${tab ? tab.label : it.type}・${sysBadge(sys)}〕` + (who.length ? who.slice(0, 2).join('・') + (who.length > 2 ? ' ほか' : '') + '　' : '') + (it.title || '（題名なし）') + (y ? `　${y}` : '');
+    return `〔${tab.label}・${sysBadge(sys)}〕` + (who.length ? who.slice(0, 2).join('・') + (who.length > 2 ? ' ほか' : '') + '　' : '') + (it.title || '（題名なし）') + (y ? `　${y}` : '');
   }
   // 「見本の書誌を編集する」：文献の一覧から選んで直す。末尾の「新しく入れる」で手入力もできる。
   function openItemList() {
     const off = new Set(state.hidden);
     const tabIdx = Object.fromEntries(G.tabsOf(state.model).map((t, k) => [t.key, k]));
-    const items = currentItems().map((it, k) => ({ it, k, t: tabIdx[G.tabOfType(it.type, state.model)] ?? 99 }))
+    const items = currentItems().map((it, k) => ({ it, k, t: tabIdx[G.tabOfType(it.type, state.model)] }))
       .sort((a, b) => a.t - b.t || a.k - b.k).map((x) => x.it);
     $('itemListTitle').textContent = usingSamples() ? '見本の書誌を編集する' : '書誌を編集する';
     $('itemList').replaceChildren(...items.map((it) => h('button', { type: 'button', class: 'item-pick' + (off.has(String(it.id)) ? ' is-hidden' : ''),
@@ -1108,8 +1265,8 @@
   // 使えない文字は _ にし、何も残らなければファイルに埋め込んだ名前を使う。
   function editedTitle(fileName, m) {
     let base = String(fileName || '').replace(/\.(csl|xml)$/i, '');
-    base = [...base].map((c) => (TITLE_OK.test(c) ? c : '_')).join('').replace(/_+/g, '_').replace(/^[_\s]+|[_\s]+$/g, '');
-    if (!base || /^_*$/.test(base)) base = (m.info && m.info.title) || 'My_style';
+    base = sanitizeTitle(base);
+    if (!base) base = (m.info && m.info.title) || 'My_style';
     // 末尾の _edited と言語の印を、無くなるまで外す（X_edited_en、X_edited_edited も X に戻る）。
     const langs = ['ja', 'en', ...G.extraLangs(m)];
     for (let more = true; more;) {
@@ -1125,9 +1282,12 @@
     let m = null;
     try { m = G.extractModel(text); } catch (e) { m = null; }
     if (!m || !m.systems) {
-      alert('読み込めるのは、このアプリで書き出した .csl だけです。Zotero のスタイル一覧などで手に入れた .csl は、作りが違うので読み込めません。既存のスタイルをそのまま使うなら、Zotero に直接入れてください。');
+      // このアプリで書き出したものでなければ、公式のスタイルとして手直しする
+      if (O.isCsl(text)) return enterOfficial(text, fileName);
+      alert('引用スタイル（CSL）のファイルとして読めませんでした。拡張子が .csl のファイルを選んでください。');
       return false;
     }
+    state.mode = 'chips';
     state.model = upgradeModel(m);
     ensureUids(m);
     // 名前が変わるときは ID も振り直す（同じ ID だと、Zotero で元のスタイルを上書きしてしまう）。
@@ -1167,23 +1327,25 @@
     showTitleState();
   }
 
+  // いまのスタイル名と ID の置き場所（型から組むときはモデル、手直しのときは state.official）。
+  function curInfo() { return state.mode === 'official' ? state.official : state.model.info; }
   // 書き出す前の確認：スタイル名が入っていて、使える文字だけか。
   function titleReady() {
-    const m = state.model;
-    if (!m.info.title || !m.info.title.trim()) {
+    const info = curInfo();
+    if (!info.title || !info.title.trim()) {
       alert('上の「スタイル名」を入れてから書き出してください。Zotero の一覧にはこの名前で出ます。');
       $('styleTitle').focus();
       return false;
     }
-    if (titleProblem(m.info.title)) {
+    if (titleProblem(info.title)) {
       alert('スタイル名には、半角の英字・数字と _ - . ( ) と空白だけを使ってください（日本語は使えません）。\n例：thesis_japanese_history');
       $('styleTitle').focus();
       return false;
     }
-    m.info.title = m.info.title.trim();
+    info.title = info.title.trim();
     return true;
   }
-  function fileBase() { return state.model.info.title.trim().replace(/[\\/:*?"<>|\s]+/g, '_'); }
+  function fileBase() { return curInfo().title.trim().replace(/[\\/:*?"<>|\s]+/g, '_'); }
   const CSL_MIME = 'application/vnd.citationstyles.style+xml';
   function download(blob, name) {
     const a = h('a', { href: URL.createObjectURL(blob), download: name });
@@ -1191,17 +1353,20 @@
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
+  // .csl を1つ保存し、Zotero への入れ方を知らせる
+  function downloadCsl(xml, name) {
+    download(new Blob([xml], { type: CSL_MIME }), name);
+    toast(`${name} を書き出しました。Zotero の 設定 → 引用 →「＋」から入れてください`);
+  }
 
   function exportCsl() {
     if (!titleReady()) return;
-    const name = fileBase() + '.csl';
-    download(new Blob([G.generate(state.model)], { type: CSL_MIME }), name);
-    toast(`${name} を書き出しました。Zotero の 設定 → 引用 →「＋」から入れてください`);
+    if (state.mode === 'official') { exportOfficial(); return; }
+    downloadCsl(G.generate(state.model), fileBase() + '.csl');
   }
 
   // ---- 言語別の書き出し ------------------------------------------------------------
   // 書式（和文・欧文・足した言語）ごとに、その書式だけで組む標準の CSL を作る。2つ以上なら zip にまとめる。
-  function splitKeys() { return ['ja', 'en', ...G.extraLangs(state.model)]; }
   function splitLabel(k) {
     const m = state.model;
     if (k === 'ja') return '和文の書式（言語欄が ja・空欄・ほかの書式に無い言語の文献）';
@@ -1210,7 +1375,7 @@
   }
   function openSplit() {
     if (!titleReady()) return;
-    const boxes = splitKeys().map((k) => h('input', { type: 'checkbox', value: k, checked: true }));
+    const boxes = sysKeys().map((k) => h('input', { type: 'checkbox', value: k, checked: true }));
     const showFiles = () => {
       const on = boxes.filter((b) => b.checked).map((b) => b.value);
       $('splitFiles').textContent = !on.length ? '書き出す書式を1つ以上選んでください。'
@@ -1229,8 +1394,7 @@
     const files = keys.map((k) => ({ name: `${fileBase()}_${k}.csl`, text: G.generate(state.model, { only: k }) }));
     $('dlgSplit').close();
     if (files.length === 1) {
-      download(new Blob([files[0].text], { type: CSL_MIME }), files[0].name);
-      toast(`${files[0].name} を書き出しました。Zotero の 設定 → 引用 →「＋」から入れてください`);
+      downloadCsl(files[0].text, files[0].name);
     } else {
       const name = fileBase() + '_by_language.zip';
       download(makeZip(files), name);
@@ -1291,8 +1455,9 @@
     list.replaceChildren(...Object.entries(ST.STARTERS).map(([k, s]) => h('button', {
       type: 'button',
       onclick: () => {
+        state.mode = 'chips';
         state.model = freshModel(k);
-        state.ui = { panel: 'ja', target: 'bib', tab: 'book', sel: null };
+        state.ui = { panel: 'ja', target: 'bib', tab: 'book', sel: null, loc: state.ui.loc };
         setTitleField(state.model.info.title);
         $('dlgStarter').close();
         renderPanels();
@@ -1324,12 +1489,293 @@
     });
   }
 
+  // ---- 公式のスタイルを手直しする ----------------------------------------------------
+  // 元の CSL（state.official.xml）を正本にし、手を入れた箇所は編集の一覧（state.official.edits）で持つ。
+  // 右のプレビューで押した箇所を、目印でたどった元の要素として左に出し、そこで直す。仕組みは src/official.js。
+  let offBase = null;   // 元の CSL を木にしたもの
+  let offView = null;   // いちばん新しい組版の結果（O.build の戻り値）
+  let offItems = [];    // そのときの文献
+  const ATTR_JA = { prefix: '前の文字', suffix: '後ろの文字', delimiter: '区切り', 'font-style': '斜体', 'font-weight': '太字', quotes: '引用符', 'text-case': '大文字・小文字', value: '文字' };
+
+  function syncModeUi() {
+    const off = state.mode === 'official';
+    $('btnExport').textContent = off ? '書き出す' : '多言語版を書き出す';
+    $('btnExportSplit').hidden = off;
+  }
+
+  function sanitizeTitle(t) {
+    return [...String(t || '')].map((c) => (TITLE_OK.test(c) ? c : '_')).join('').replace(/_+/g, '_').replace(/^[_\s]+|[_\s]+$/g, '');
+  }
+  function enterOfficial(text, fileName) {
+    let base;
+    try { base = O.parse(text); } catch (e) { base = null; }
+    if (!base || !/<layout[\s>]/.test(text)) { alert('引用スタイル（CSL）のファイルとして読めませんでした。'); return false; }
+    if (base.count >= O.MAXN) { alert(`このスタイルは部品が多すぎて（${base.count}個）、いまのアプリでは扱えません。`); return false; }
+    if (/<link[^>]*rel="independent-parent"/.test(text)) {
+      alert('このファイルは、別のスタイルを親にした「依存スタイル」で、書き方の中身を持っていません。親のスタイル（ファイルの中の independent-parent のリンク先）をダウンロードして、そちらを読み込んでください。');
+      return false;
+    }
+    const source = O.titleOf(text);
+    const title = editedTitle(fileName, { info: { title: sanitizeTitle(source) } });
+    // 前にこのアプリで手直しして書き出したもの（名前が _edited で終わる）は、名前と ID を保つ
+    const sameName = sanitizeTitle(source) === title;
+    const id = sameName ? ((text.match(/<id>([^<]*)<\/id>/) || [])[1] || newStyleId()) : newStyleId();
+    offBase = base;
+    state.mode = 'official';
+    state.official = { xml: text, edits: [], title, id, source };
+    state.ui.osel = null;
+    setTitleField(title);
+    renderPanels();
+    renderPreview();
+    save();
+    toast(`「${source}」を読み込みました。右のプレビューで、直したい箇所を押してください`);
+    return true;
+  }
+
+  function renderOfficialPreview() {
+    const items = visibleItems();
+    offItems = items;
+    const hiddenItems = currentItems().filter((i) => state.hidden.includes(String(i.id)));
+    previewHeader(items, hiddenItems, '　組み直しています…');
+    const errBox = $('previewError');
+    clearTimeout(renderOfficialPreview.t);
+    renderOfficialPreview.t = setTimeout(() => {
+      try {
+        offView = O.build(window.CSL, offBase, state.official.edits, items, retrieveLocale, curLoc());
+        errBox.hidden = true;
+      } catch (err) {
+        errBox.hidden = false;
+        errBox.textContent = '組版でエラーが出ました。直前の変更を元に戻してみてください。\n' + (err && err.message ? err.message : err);
+        $('dataSource').textContent = `${state.source}・${items.length}件`;
+        return;
+      }
+      $('dataSource').textContent = sourceText(items, hiddenItems);
+      drawOfficialCards(items, hiddenItems);
+      drawOfficialPanel();
+    }, 30);
+  }
+
+  function drawOfficialCards(items, hiddenItems) {
+    const order = items.map((it, k) => ({ it, k, t: MAIN_TYPES.indexOf(it.type) < 0 ? 9 : MAIN_TYPES.indexOf(it.type), n: (it.author || []).length || 99 }))
+      .sort((a, b) => a.t - b.t || a.n - b.n || a.k - b.k).map((x) => x.it);
+    const nodes = order.map((it) => {
+      const rows = offView.view[it.id] || [];
+      return h('div', { class: 'item off', 'data-id': it.id, 'data-authors': authorCountLabel(it) },
+        h('div', { class: 'meta' },
+          h('span', { class: 'badge', text: G.cslTypeLabel(it.type || '') }),
+          h('span', { class: 'badge', text: it.language ? it.language : '言語なし' }),
+          h('span', { class: 'badge', text: authorCountLabel(it) }),
+          h('span', { class: 'spacer' }),
+          ...itemButtons(it.id)),
+        h('div', { class: 'out' }, ...rows.flatMap((r) => [h('span', { class: 'k', text: r.label }),
+          h('span', { class: 'v', 'data-row': r.key, html: r.html || '<span class="muted">（出ません）</span>' })])));
+    });
+    const hiddenBox = hiddenBoxOf(hiddenItems);
+    const list = $('previewList');
+    list.replaceChildren(...nodes, h('p', { id: 'previewEmpty', class: 'muted small', hidden: true, text: '条件に合う文献がありません。' }), hiddenBox || '');
+    list.onclick = (e) => {
+      const seg = e.target.closest('.cslseg');
+      if (!seg) return;
+      const card = seg.closest('.item'), row = seg.closest('[data-row]');
+      state.ui.osel = { n: +seg.dataset.n, path: seg.dataset.path.split(',').map(Number), item: card.dataset.id, row: row.dataset.row };
+      drawOfficialPanel();
+      offHighlight();
+      save();
+    };
+    offHighlight();
+    offFilter();
+  }
+
+  // 選んだ部品と、その内側から出た文字を光らせる（同じ部品が出ている所はすべて光る＝どこに効くかが見える）
+  function offHighlight() {
+    const sel = state.ui.osel;
+    document.querySelectorAll('#previewList .cslseg').forEach((s) => {
+      const on = !!sel && s.dataset.path.split(',').map(Number).includes(sel.n);
+      s.classList.toggle('hl', on);
+    });
+  }
+  function offFilter() {
+    const who = state.ui.authors || '';
+    let shown = 0, total = 0;
+    document.querySelectorAll('#previewList .item').forEach((n) => { const on = !who || n.dataset.authors === who; n.hidden = !on; total++; if (on) shown++; });
+    const box = $('previewFilter');
+    box.replaceChildren(authorSelect(who, offFilter), locSelect(), h('span', { class: 'muted', text: `${shown}/${total}件` }));
+    const empty = $('previewEmpty');
+    if (empty) empty.hidden = shown > 0;
+  }
+
+  // ---- 左：選んだ箇所の詳細と、手を入れた箇所の一覧 ---------------------------------------
+  const baseEl = (n) => O.index(offBase)[n];
+  const curEl = (n) => (offView ? O.index(offView.tree)[n] : null);
+  // その部品が出ている所（参考文献・注 × 資料の種類）
+  function scopeOf(n) {
+    const where = new Map();
+    for (const it of offItems) {
+      for (const r of (offView.view[it.id] || [])) {
+        if (new RegExp(`data-path="(?:[\\d,]*,)?${n}(?:,[\\d,]*)?"`).test(r.html)) {
+          const k = r.label;
+          if (!where.has(k)) where.set(k, new Set());
+          where.get(k).add(G.cslTypeLabel(it.type || ''));
+        }
+      }
+    }
+    return [...where].map(([k, ts]) => `${k}（${[...ts].join('・')}）`);
+  }
+  function setEdit(edit) {
+    const ed = state.official.edits;
+    if (edit.op === 'attr') {
+      const k = ed.findIndex((x) => x.op === 'attr' && x.e === edit.e && x.name === edit.name);
+      const orig = O.getAttr(O.indexEid(offBase)[edit.e], edit.name);
+      if (k >= 0) ed.splice(k, 1);
+      if ((edit.value || '') !== (orig || '')) ed.push(edit);
+    } else ed.push(edit);
+    renderPreview();
+    save();
+  }
+  function editLabel(x) {
+    const el = O.indexEid(offBase)[x.e];
+    const what = el && el.ord !== undefined ? O.describe(el) : (el ? 'その部分' : '');
+    if (x.op === 'attr') {
+      const v = x.value;
+      if (x.name === 'font-style') return `${what}：${v === 'italic' ? '斜体にする' : '斜体にしない'}`;
+      if (x.name === 'font-weight') return `${what}：${v === 'bold' ? '太字にする' : '太字にしない'}`;
+      if (x.name === 'quotes') return `${what}：${v === 'true' ? '引用符で囲む' : '引用符で囲まない'}`;
+      return `${what}：${ATTR_JA[x.name] || x.name}を${v ? `「${v}」にする` : '空にする'}`;
+    }
+    if (x.op === 'delete') return `${what}：出さない`;
+    if (x.op === 'swap') return `${what}：並びを入れ替える`;
+    return what;
+  }
+
+  // 並べ替え：選んだ部品を含むまとまりを内側から外側へ見て、出力の上で隣に部品があるいちばん内側のまとまりの中で、
+  // 隣の部品と入れ替える（出版者のすぐ外が「出版者と出版地」のまとまりで、図書では出版者しか出ていない、といった場合は、その外へ）。
+  function moveTargets(sel) {
+    if (!offView) return null;
+    const html = ((offView.view[sel.item] || []).find((r) => r.key === sel.row) || {}).html || '';
+    const path = sel.path.slice(0, sel.path.indexOf(sel.n) + 1);
+    const paths = [];
+    html.replace(/data-path="([\d,]+)"/g, (m, ps) => { paths.push(ps.split(',').map(Number)); return m; });
+    for (let gi = path.length - 2; gi >= 0; gi--) {
+      const g = curEl(path[gi]);
+      if (!g || g.tag !== 'group') continue;
+      const unitOf = (p) => { const inner = curEl(p[gi + 1]); return inner ? O.unitIn(g, inner) : null; };
+      const mine = unitOf(path);
+      if (!mine) continue;
+      const head = path.slice(0, gi + 1).join();
+      const units = [];
+      for (const p of paths) {
+        if (p.length <= gi + 1 || p.slice(0, gi + 1).join() !== head) continue;
+        const u = unitOf(p);
+        if (u && !units.includes(u)) units.push(u);
+      }
+      const k = units.indexOf(mine);
+      if (k < 0 || units.length < 2) continue;
+      return { group: g, mine, prev: k > 0 ? units[k - 1] : null, next: k < units.length - 1 ? units[k + 1] : null };
+    }
+    return null;
+  }
+
+  function drawOfficialPanel() {
+    const tabs = $('panelTabs');
+    tabs.replaceChildren(...modeTabs('fine'));
+    const body = $('panelBody');
+    const off = state.official || {};
+    const parts = [h('div', { class: 'off-source' },
+      h('div', {}, h('span', { class: 'muted small', text: 'もとにしたスタイル：' }), h('b', { text: off.source || '' })),
+      h('p', { class: 'hint', text: '元のスタイルの書き方に、そのまま手を入れます。欧文の文献も和文の文献も、このスタイルの書き方で組みます。資料の種類ごとに部品を足したり、和文の書式を足して多言語版にしたりするときは「大幅修正」へ。' }))];
+    const sel = state.ui.osel;
+    const el = sel && curEl(sel.n);
+    if (!sel || !el) {
+      parts.push(h('div', { class: 'off-empty' },
+        h('p', { text: '右のプレビューで、直したい箇所を押してください。' }),
+        h('p', { class: 'hint', text: '押した部品と、同じ部品から出ている所がすべて光ります。ここで、前後の文字や区切り、斜体などを直したり、出さないようにしたり、並びを入れ替えたりできます。' })));
+    } else {
+      // 外から内への入れ子（いちばん外の「全体」から、選んだ部品まで）
+      const path = sel.path.slice(0, sel.path.indexOf(sel.n) + 1);
+      // 入れ子のうち、直せることのあるもの（区切りや前後の文字を持つまとまり、出力そのものを出す部品）だけを並べる
+      // まとまりは、この行の出力で区切りが実際に現れている（中に部品が2つ以上出ている）か、前後の文字を持つものだけ
+      const rowHtml = ((offView.view[sel.item] || []).find((r) => r.key === sel.row) || {}).html || '';
+      const rowPaths = [];
+      rowHtml.replace(/data-path="([\d,]+)"/g, (m, ps) => { rowPaths.push(ps.split(',').map(Number)); return m; });
+      const shownInside = (i) => {
+        const head = path.slice(0, i + 1).join();
+        return new Set(rowPaths.filter((p) => p.length > i + 1 && p.slice(0, i + 1).join() === head).map((p) => p[i + 1])).size;
+      };
+      const meaningful = (x, i) => x.ord === sel.n || x.tag === 'layout'
+        || (x.tag === 'group' && (O.getAttr(x, 'prefix') || O.getAttr(x, 'suffix') || (O.getAttr(x, 'delimiter') && shownInside(i) >= 2)))
+        || (x.tag !== 'group' && !(x.tag === 'text' && O.getAttr(x, 'macro')));
+      const crumbs = path.map((n, i) => [curEl(n), i]).filter(([x, i]) => x && meaningful(x, i)).map(([x]) => x);
+      parts.push(h('div', { class: 'off-crumbs' }, ...crumbs.flatMap((x, i) => [i ? h('span', { class: 'muted', text: ' › ' }) : '',
+        h('button', { type: 'button', class: 'crumb' + (x.ord === sel.n ? ' on' : ''), title: 'この範囲を選ぶ',
+          onclick: () => { state.ui.osel = { ...sel, n: x.ord }; drawOfficialPanel(); offHighlight(); save(); } }, O.describe(x))])));
+      const scope = scopeOf(sel.n);
+      parts.push(h('h3', { text: O.describe(el) }),
+        h('p', { class: scope.length > 1 ? 'warn' : 'hint', text: scope.length ? `この部品は、${scope.join('、')} に出ています。` + (scope.length > 1 ? '直すと、そのすべてが変わります。' : '') : 'この部品は、いまの文献では何も出していません。' }));
+      const e = baseEl(sel.n) ? baseEl(sel.n).eid : el.eid;
+      const grid = h('div', { class: 'form-grid' });
+      const txt = (name, label, hint) => {
+        const inp = h('input', { type: 'text', value: O.getAttr(el, name) || '', placeholder: hint || '' });
+        inp.addEventListener('change', () => setEdit({ e, op: 'attr', name, value: inp.value }));
+        grid.append(h('label', { text: label }), inp);
+      };
+      const chk = (name, label, onVal, offVal) => {
+        const c = h('input', { type: 'checkbox' });
+        c.checked = O.getAttr(el, name) === onVal;
+        c.addEventListener('change', () => setEdit({ e, op: 'attr', name, value: c.checked ? onVal : offVal }));
+        grid.append(h('label', { text: label }), h('span', {}, c));
+      };
+      if (el.tag === 'text' && O.getAttr(el, 'value') !== undefined) txt('value', '文字');
+      txt('prefix', '前に付ける文字');
+      txt('suffix', '後ろに付ける文字');
+      if (['group', 'names', 'date'].includes(el.tag) || (el.tag === 'layout')) txt('delimiter', '区切り', el.tag === 'layout' ? '同じ所で複数の文献を引くときの区切り' : '');
+      if (el.tag !== 'layout') {
+        chk('font-style', '斜体', 'italic', 'normal');
+        chk('font-weight', '太字', 'bold', 'normal');
+      }
+      if (el.tag === 'text' && O.getAttr(el, 'variable')) chk('quotes', '引用符（“ ”）で囲む', 'true', 'false');
+      if (['text', 'label', 'names'].includes(el.tag) || el.tag === 'date') {
+        const s = h('select', {}, ...[['', 'そのまま'], ['capitalize-first', '先頭だけ大文字'], ['title', '各語の頭を大文字'], ['lowercase', 'すべて小文字'], ['uppercase', 'すべて大文字']].map(([v, l]) => h('option', { value: v, text: l })));
+        s.value = O.getAttr(el, 'text-case') || '';
+        s.addEventListener('change', () => setEdit({ e, op: 'attr', name: 'text-case', value: s.value }));
+        grid.append(h('label', { text: '大文字・小文字' }), s);
+      }
+      parts.push(grid);
+      const mv = moveTargets(sel);
+      const acts = h('div', { class: 'off-actions' });
+      if (mv && (mv.prev || mv.next)) {
+        acts.append(
+          h('button', { type: 'button', disabled: !mv.prev, onclick: () => setEdit({ e: mv.mine.eid, op: 'swap', with: mv.prev.eid }) }, '← 前の部品と入れ替える'),
+          h('button', { type: 'button', disabled: !mv.next, onclick: () => setEdit({ e: mv.mine.eid, op: 'swap', with: mv.next.eid }) }, '後ろの部品と入れ替える →'));
+      }
+      if (el.tag !== 'layout') acts.append(h('button', { type: 'button', class: 'danger', onclick: () => { setEdit({ e, op: 'delete' }); state.ui.osel = null; } }, 'この部品を出さない'));
+      parts.push(acts);
+      const mc = O.macroOf(baseEl(sel.n) || el);
+      parts.push(h('p', { class: 'muted small', text: `元の CSL：<${el.tag}>` + (mc ? `（マクロ ${mc} の中）` : '') }));
+    }
+    // 手を入れた箇所
+    const ed = off.edits || [];
+    parts.push(h('h3', { text: `手を入れた箇所（${ed.length}件）` }));
+    if (!ed.length) parts.push(h('p', { class: 'hint', text: 'まだありません。' }));
+    else {
+      parts.push(h('ul', { class: 'off-edits' }, ...ed.map((x, i) => h('li', {}, h('span', { text: editLabel(x) }),
+        h('button', { type: 'button', class: 'small-btn', onclick: () => { ed.splice(i, 1); renderPreview(); save(); } }, '元に戻す')))),
+        h('button', { type: 'button', class: 'small-btn', onclick: () => { if (confirm('手を入れた箇所をすべて元に戻します。よろしいですか。')) { ed.splice(0); renderPreview(); save(); } } }, 'すべて元に戻す'));
+    }
+    body.replaceChildren(...parts);
+  }
+
+  function exportOfficial() {
+    const off = state.official;
+    const xml = O.finalize(O.serialize(O.apply(offBase, off.edits)), { title: off.title.trim(), id: off.id, updated: new Date().toISOString().replace(/\.\d+Z$/, '+00:00') });
+    downloadCsl(xml, fileBase() + '.csl');
+  }
+
   // ---- 起動 ------------------------------------------------------------------
   function init() {
     const restored = load();
     if (!restored) state.model = freshModel('chicago');
-    setTitleField(state.model.info.title);
-    $('styleTitle').addEventListener('input', (e) => { state.model.info.title = e.target.value; showTitleState(); save(); });
+    setTitleField(curInfo().title);
+    $('styleTitle').addEventListener('input', (e) => { curInfo().title = e.target.value; showTitleState(); save(); });
     $('btnStarter').addEventListener('click', openStarter);
     $('btnBrand').addEventListener('click', openStarter);
     $('btnPickItems').addEventListener('click', () => { $('dlgItemList').close(); readFile($('fileItems'), loadItems); });
@@ -1354,7 +1800,7 @@
     renderPreview();
     if (!restored) openStarter();
   }
-  window.CSLApp = { state, renderPreview, editedTitle };
+  window.CSLApp = { state, renderPreview, editedTitle, get offView() { return offView; } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
