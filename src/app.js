@@ -1783,6 +1783,7 @@
     $('btnExportSplit').addEventListener('click', openSplit);
     $('btnDoSplit').addEventListener('click', doSplit);
     $('btnHelp').addEventListener('click', () => $('dlgHelp').showModal());
+    $('btnChangelog').addEventListener('click', () => $('dlgChangelog').showModal());
     $('btnAddItem').addEventListener('click', openItemList);
     $('btnNewItem').addEventListener('click', () => { $('dlgItemList').close(); openItemEditor(null); });
     // 入力欄で Enter を押しても、入れかけの文献が閉じて消えないようにする。

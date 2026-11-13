@@ -92,6 +92,11 @@ button.brand-name:hover { color: var(--accent); }
 .site-footer p { margin: 0 0 2px; }
 .site-footer b { color: var(--ink); font-weight: 600; }
 .site-footer .copyright { text-align: center; margin-top: 10px; }
+.link-btn { border: none; background: none; padding: 0 2px; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; }
+.changelog h3 { font-size: 15px; margin: 14px 0 4px; }
+.changelog h4 { font-size: 13px; margin: 10px 0 2px; color: var(--muted); }
+.changelog p, .changelog li { font-size: 13px; line-height: 1.6; }
+.changelog ul { margin: 2px 0; padding-left: 1.4em; }
 .site-footer a, .drop-zone a { color: var(--accent); }
 
 /* ---- 2段組 ---- */

@@ -34,6 +34,62 @@ def comment_block(text: str) -> str:
     return "/*\n" + text.replace("*/", "* /") + "\n*/"
 
 
+def markdown_html(md: str) -> str:
+    """CHANGELOG.md を HTML にする。使う書き方は、見出し（## ###）・箇条書き（2段まで）・段落・
+    **太字**・`コード`・[リンク](URL) だけ。いちばん上の見出し（# 更新履歴）は画面の見出しと重なるので外す。"""
+    def inline_md(t: str) -> str:
+        t = html_escape(t)
+        t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
+        t = re.sub(r"`(.+?)`", r"<code>\1</code>", t)
+        t = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2" target="_blank" rel="noopener">\1</a>', t)
+        return t
+
+    out, depth, para = [], 0, []
+
+    def close_lists(to: int) -> None:
+        nonlocal depth
+        while depth > to:
+            out.append("</li></ul>")
+            depth -= 1
+
+    def flush_para() -> None:
+        if para:
+            out.append("<p>" + inline_md(" ".join(para)) + "</p>")
+            para.clear()
+
+    for line in md.splitlines():
+        item = re.match(r"^( *)- (.*)$", line)
+        if line.startswith("# "):
+            continue
+        if line.startswith("## ") or line.startswith("### "):
+            flush_para(); close_lists(0)
+            tag = "h3" if line.startswith("## ") else "h4"
+            text = re.sub(r"^\[(.+?)\] - ", r"v\1　", line.lstrip("# "))
+            out.append(f"<{tag}>{inline_md(text)}</{tag}>")
+        elif item:
+            flush_para()
+            level = len(item.group(1)) // 2 + 1
+            if level > depth:
+                while depth < level:
+                    out.append("<ul><li>")
+                    depth += 1
+            else:
+                close_lists(level)
+                out.append("</li><li>")
+            out.append(inline_md(item.group(2)))
+        elif not line.strip():
+            flush_para()
+        else:
+            close_lists(0)
+            para.append(line.strip())
+    flush_para(); close_lists(0)
+    return "\n".join(out)
+
+
+def html_escape(s: str) -> str:
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def build(out: Path) -> None:
     html = read(SRC / "index.html")
 
@@ -49,8 +105,16 @@ def build(out: Path) -> None:
     icon = "data:image/svg+xml;base64," + base64.b64encode((SRC / "icon.svg").read_bytes()).decode("ascii")
     html = html.replace("<!-- @icon link -->", f'<link rel="icon" type="image/svg+xml" href="{icon}">')
     html = html.replace("<!-- @icon img -->", f'<img class="brand-icon" src="{icon}" alt="" width="22" height="22">')
-    # 版は組んだ日付。HTML だけを配ったとき、手元のものが古いかを見分けられるように。
-    html = html.replace("<!-- @version -->", datetime.date.today().isoformat())
+    # 版と公開日は CHANGELOG.md のいちばん上の版から取る。更新履歴の画面の中身も、同じファイルから作る。
+    # 組んだ日付も残す（HTML だけを配ったとき、手元のものが古いかを見分けられるように）。
+    changelog = read(HERE / "CHANGELOG.md")
+    m = re.search(r"^## \[(\d+\.\d+\.\d+)\] - (\d{4}-\d{2}-\d{2})", changelog, re.M)
+    if not m:
+        sys.exit("CHANGELOG.md に「## [0.1.0] - 2026-11-13」の形の版が見つかりません")
+    html = html.replace("<!-- @version -->", m.group(1))
+    html = html.replace("<!-- @released -->", m.group(2))
+    html = html.replace("<!-- @built -->", datetime.date.today().isoformat())
+    html = html.replace("<!-- @changelog -->", markdown_html(changelog))
 
     lic = read(VENDOR / "LICENSE")
     citeproc = read(VENDOR / "citeproc_commonjs.js")
