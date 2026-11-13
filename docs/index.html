@@ -100,6 +100,11 @@ button.brand-name:hover { color: var(--accent); }
 .site-footer p { margin: 0 0 2px; }
 .site-footer b { color: var(--ink); font-weight: 600; }
 .site-footer .copyright { text-align: center; margin-top: 10px; }
+.link-btn { border: none; background: none; padding: 0 2px; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; }
+.changelog h3 { font-size: 15px; margin: 14px 0 4px; }
+.changelog h4 { font-size: 13px; margin: 10px 0 2px; color: var(--muted); }
+.changelog p, .changelog li { font-size: 13px; line-height: 1.6; }
+.changelog ul { margin: 2px 0; padding-left: 1.4em; }
 .site-footer a, .drop-zone a { color: var(--accent); }
 
 /* ---- 2段組 ---- */
@@ -314,7 +319,7 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
   <p>読み込んだ書誌（CSL JSON）や .csl は、このブラウザの中だけで処理します。外部には送信しません。作業中の状態は、このブラウザの中に保存されます（ほかの人やほかの端末からは見えません）。</p>
   <p>このアプリは AGPL-3.0 で公開しています（<a href="https://github.com/ayanosk/csl-editor">ソース</a>）。組版エンジン citeproc-js（CPAL 1.0 または AGPL 3.0）と、CSL のロケール（CC BY-SA 3.0）を同梱しています。詳しくは「使い方」をご覧ください。</p>
   <p>不具合の報告やご意見は、<a href="https://github.com/ayanosk/csl-editor/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお寄せください。</p>
-  <p class="copyright">© 2026 引用スタイル（CSL）編集アプリ（β版）（2026-11-13 公開）　Ayano KOKAZE</p>
+  <p class="copyright">© 2026 引用スタイル（CSL）編集アプリ（β版）<button id="btnChangelog" type="button" class="link-btn" title="更新履歴を見る">v0.1.0</button>（2026-11-13 公開）　Ayano KOKAZE</p>
 </footer>
 
 <dialog id="dlgStarter">
@@ -366,6 +371,45 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
 
 <dialog id="dlgItem">
   <form method="dialog" id="itemForm"></form>
+</dialog>
+
+<dialog id="dlgChangelog">
+  <form method="dialog">
+    <h2>更新履歴</h2>
+    <div class="changelog"><p>このアプリの版ごとの変更を記録します。新しい版が上です。</p>
+<p><b>版の付け方</b>：β版の間は <code>0.機能.修正</code> とします。機能を足したら真ん中の数字を、不具合の修正だけなら末尾の数字を上げます。β版を外すときに <code>1.0.0</code> にします。アプリのフッターに出る版と日付は、この一覧のいちばん上の版から取ります。</p>
+<h3>v0.1.0　2026-11-13</h3>
+<p>β版として初めて公開した版です。</p>
+<h4>できること</h4>
+<ul><li>
+<b>型から組む</b>：Chicago 風・APA 風・MLA 風・IEEE 風の4つの型から始め、資料の種類（図書・本の章・雑誌論文・ウェブページなど）ごとに、参考文献と注（または本文中の引用）の並びを部品（チップ）で作る。
+</li><li>
+<b>和文と欧文の書き分け</b>：和文・欧文（とフランス語など足した言語）で別々の書式を持ち、Zotero の「言語」欄で振り分ける。多言語版（1つのスタイルで書き分ける）と、言語別（書式ごとに1つずつ）の2通りで書き出せる。
+</li><li>
+<b>公式のスタイルを手直しする</b>：Zotero のスタイル一覧の .csl を読み込んで直す。
+<ul><li>
+微調整：出力を押して、元の書き方にそのまま手を入れる。
+</li><li>
+大幅修正：元のスタイルを部品に移し、資料の種類ごとに自由に組み直す。和文の書式も入るので多言語版にできる。元のスタイルとの一致を見本ごとに示し、作者・ライセンスの表示と元のスタイルの記録（template）を保つ。
+</li></ul>
+</li><li>
+<b>自分の文献で試す</b>：Zotero から書き出した書誌（CSL JSON）を読み込んでプレビューする。
+</li><li>
+<b>2回目以降の注</b>：直前と同じ文書（同上）と、別の文書を挟んだ場合（短縮形）を書き分ける。
+</li><li>
+<b>引用箇所</b>：頁のほか、章・節（第二章、2章2節なども）で組む。
+</li><li>
+<b>細かな設定</b>：「ほか」の前の区切り、欧文の姓（大文字・スモールキャピタル）、同じ著者の2件目以降（——— など）、DOI の書き方、頁の範囲の区切り、用語表。
+</li></ul>
+<h4>公開までの経過</h4>
+<ul><li>
+2026-11-12：型から組む版を作る。引用箇所を章・節でも組めるようにする。公式のスタイルを手直しする仕組み（微調整）を作る。
+</li><li>
+2026-11-13：大幅修正、アイコン、フッターの表示、問い合わせ先（Issues）を加え、全体の重複を整理する。
+</li></ul></div>
+    <p class="muted small">この HTML を組んだ日：2026-11-13。不具合の報告やご意見は、<a href="https://github.com/ayanosk/csl-editor/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお寄せください。</p>
+    <div class="dlg-actions"><button value="cancel">閉じる</button></div>
+  </form>
 </dialog>
 
 <dialog id="dlgHelp">
@@ -28854,6 +28898,7 @@ window.CSL_SAMPLES = [{"id": "s-ja-book-1", "type": "book", "language": "ja", "t
     $('btnExportSplit').addEventListener('click', openSplit);
     $('btnDoSplit').addEventListener('click', doSplit);
     $('btnHelp').addEventListener('click', () => $('dlgHelp').showModal());
+    $('btnChangelog').addEventListener('click', () => $('dlgChangelog').showModal());
     $('btnAddItem').addEventListener('click', openItemList);
     $('btnNewItem').addEventListener('click', () => { $('dlgItemList').close(); openItemEditor(null); });
     // 入力欄で Enter を押しても、入れかけの文献が閉じて消えないようにする。

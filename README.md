@@ -42,7 +42,7 @@
 
 ## β版について
 
-画面や出力は予告なく変わることがあります。書き出したスタイルは、最後に Zotero などで確かめてください。不具合や気づいたことは [Issues](https://github.com/ayanosk/csl-editor/issues) へどうぞ。
+画面や出力は予告なく変わることがあります。書き出したスタイルは、最後に Zotero などで確かめてください。不具合や気づいたことは [Issues](https://github.com/ayanosk/csl-editor/issues) へどうぞ。版ごとの変更は [CHANGELOG.md](CHANGELOG.md)（アプリではフッターの版を押すと開く「更新履歴」）に記録しています。
 
 ## 開発
 
@@ -58,6 +58,7 @@ bash tests/browser/run_all.sh     # ヘッドレスの Chrome で画面を操作
 ```
 
 - `src/` がアプリの本体、`vendor/` が同梱物（citeproc-js と CSL のロケール）です。`docs/index.html` は `build.py` で作るもので、GitHub Pages はここを公開します。直したら組み直してコミットしてください。
+- 版を上げるときは、[CHANGELOG.md](CHANGELOG.md) のいちばん上に `## [0.2.0] - 2026-12-01` の形で版を足し、追加・変更・修正を書いてから `build.py` で組み直します。フッターの版と公開日、アプリの「更新履歴」は、ここから作られます。
 - 画面の検証には puppeteer-core と Google Chrome が要ります。場所は環境変数 `PUPPETEER_CORE`・`CHROME` で指定でき、無ければ自動で探します。
 
 ## ライセンス

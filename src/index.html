@@ -51,7 +51,7 @@
   <p>読み込んだ書誌（CSL JSON）や .csl は、このブラウザの中だけで処理します。外部には送信しません。作業中の状態は、このブラウザの中に保存されます（ほかの人やほかの端末からは見えません）。</p>
   <p>このアプリは AGPL-3.0 で公開しています（<a href="https://github.com/ayanosk/csl-editor">ソース</a>）。組版エンジン citeproc-js（CPAL 1.0 または AGPL 3.0）と、CSL のロケール（CC BY-SA 3.0）を同梱しています。詳しくは「使い方」をご覧ください。</p>
   <p>不具合の報告やご意見は、<a href="https://github.com/ayanosk/csl-editor/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお寄せください。</p>
-  <p class="copyright">© 2026 引用スタイル（CSL）編集アプリ（β版）（<!-- @version --> 公開）　Ayano KOKAZE</p>
+  <p class="copyright">© 2026 引用スタイル（CSL）編集アプリ（β版）<button id="btnChangelog" type="button" class="link-btn" title="更新履歴を見る">v<!-- @version --></button>（<!-- @released --> 公開）　Ayano KOKAZE</p>
 </footer>
 
 <dialog id="dlgStarter">
@@ -103,6 +103,15 @@
 
 <dialog id="dlgItem">
   <form method="dialog" id="itemForm"></form>
+</dialog>
+
+<dialog id="dlgChangelog">
+  <form method="dialog">
+    <h2>更新履歴</h2>
+    <div class="changelog"><!-- @changelog --></div>
+    <p class="muted small">この HTML を組んだ日：<!-- @built -->。不具合の報告やご意見は、<a href="https://github.com/ayanosk/csl-editor/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお寄せください。</p>
+    <div class="dlg-actions"><button value="cancel">閉じる</button></div>
+  </form>
 </dialog>
 
 <dialog id="dlgHelp">
