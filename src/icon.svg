@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">CSL Editor app icon</title>
+  <desc id="desc">A white CSL markup document with a teal editing pencil over a blue rounded square.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#073577"/>
+      <stop offset="0.55" stop-color="#0862a3"/>
+      <stop offset="1" stop-color="#03a6b1"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e9f3f9"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a7dcff"/>
+      <stop offset="1" stop-color="#63b9ef"/>
+    </linearGradient>
+    <linearGradient id="pencil" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#05bcc1"/>
+      <stop offset="1" stop-color="#007f99"/>
+    </linearGradient>
+    <filter id="paperShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#002e5c" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- App tile -->
+  <rect x="12" y="12" width="1000" height="1000" rx="208" fill="url(#background)"/>
+  <!-- Document and folded corner -->
+  <path d="M252 138 H670 L832 298 V819 Q832 883 768 883 H252 Q186 883 186 819 V204 Q186 138 252 138 Z" fill="url(#paper)" filter="url(#paperShadow)"/>
+  <path d="M670 138 V243 Q670 298 725 298 H832 Z" fill="url(#fold)"/>
+  <!-- Markup heading -->
+  <g font-family="Arial, Helvetica, sans-serif" font-weight="700" text-anchor="middle">
+    <text x="509" y="335" font-size="105" fill="#083774" letter-spacing="-2">CSL</text>
+  </g>
+  <g fill="none" stroke="#00a4a9" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M312 243 L272 282 L312 321"/>
+    <path d="M697 243 L737 282 L697 321"/>
+  </g>
+  <!-- Editable code text -->
+  <rect x="248" y="399" width="6" height="132" rx="3" fill="#b1cee0"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="37" font-weight="500" fill="#5a819b">
+    <text x="275" y="423">&lt;style&gt;</text>
+    <text x="302" y="467" font-size="29">&lt;citation&gt;…&lt;/citation&gt;</text>
+    <text x="275" y="514">&lt;/style&gt;</text>
+  </g>
+  <path d="M249 577 H742" stroke="#a6cbe1" stroke-width="8" stroke-linecap="round"/>
+  <!-- Stylized citation preview -->
+  <g fill="none" stroke="#008d9c" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M279 636 H252 V800 H279"/>
+    <path d="M643 636 H670 V800 H643"/>
+  </g>
+  <text x="306" y="711" font-family="Georgia, serif" font-size="111" font-weight="700" fill="#009aa5">“</text>
+  <rect x="400" y="672" width="237" height="29" rx="9" fill="#b3d6e9"/>
+  <rect x="305" y="732" width="284" height="31" rx="9" fill="#b3d6e9"/>
+  <text x="577" y="797" font-family="Georgia, serif" font-size="96" font-weight="700" fill="#009aa5">”</text>
+  <!-- Pencil overlay; individually editable vector parts -->
+  <g transform="rotate(43 771 657)">
+    <!-- white keyline -->
+    <path d="M727 450 Q727 425 752 425 H790 Q815 425 815 450 V745 L771 829 L727 745 Z" fill="#ffffff" stroke="#ffffff" stroke-width="18" stroke-linejoin="round"/>
+    <!-- eraser cap -->
+    <path d="M735 457 Q735 435 755 435 H787 Q807 435 807 457 V493 H735 Z" fill="#0b5981"/>
+    <!-- body -->
+    <path d="M735 501 H807 V737 H735 Z" fill="url(#pencil)"/>
+    <path d="M735 501 H754 V737 H735 Z" fill="#23d2d1" opacity="0.55"/>
+    <rect x="735" y="489" width="72" height="18" fill="#d5f5f7"/>
+    <!-- graphite tip -->
+    <path d="M735 737 H807 L771 811 Z" fill="#c9e9ee"/>
+    <path d="M754 776 L771 811 L788 776 Z" fill="#063d69"/>
+  </g>
+</svg>

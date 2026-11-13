@@ -6,6 +6,7 @@
 既定の出力先は docs/index.html（GitHub Pages で公開する場所）。
 ネットにつながなくても動くよう、citeproc-js・ロケール・見本の書誌をすべて埋め込む。
 """
+import base64
 import datetime
 import json
 import re
@@ -44,6 +45,10 @@ def build(out: Path) -> None:
         return script(body, f"src/{name}")
 
     html = re.sub(r"<!-- @inline (\S+) -->", inline, html)
+    # アプリのアイコン（src/icon.svg）。タブのアイコンと、上の帯のアプリ名の前に置く。
+    icon = "data:image/svg+xml;base64," + base64.b64encode((SRC / "icon.svg").read_bytes()).decode("ascii")
+    html = html.replace("<!-- @icon link -->", f'<link rel="icon" type="image/svg+xml" href="{icon}">')
+    html = html.replace("<!-- @icon img -->", f'<img class="brand-icon" src="{icon}" alt="" width="22" height="22">')
     # 版は組んだ日付。HTML だけを配ったとき、手元のものが古いかを見分けられるように。
     html = html.replace("<!-- @version -->", datetime.date.today().isoformat())
 

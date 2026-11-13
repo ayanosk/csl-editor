@@ -12,7 +12,7 @@
   // まとまり〔 〕。中が全部空なら、前後の文字（prefix・suffix）ごと消える（CSL の group）。
   const Grp = (chips, prefix = '', suffix = '') => [{ t: 'open', prefix }, ...chips, { t: 'close', suffix }];
 
-  const JA_NAMES = { delimiter: '・', and: 'none', etAlMin: 4, etAlUseFirst: 1, initialize: false, roleAfterPrefix: '', roleBeforeSuffix: '', substituteRole: 'after' };
+  const JA_NAMES = { delimiter: '・', and: 'none', precedesEtAl: 'never', etAlMin: 4, etAlUseFirst: 1, initialize: false, roleAfterPrefix: '', roleBeforeSuffix: '', substituteRole: 'after' };
   const EN_NAMES = { delimiter: ', ', and: 'text', precedesLast: 'contextual', precedesLastInverted: 'always', precedesEtAl: 'never', etAlMin: 11, etAlUseFirst: 7, initialize: false, initializeWith: '. ', sortSeparator: ', ', roleAfterPrefix: ', ', roleBeforeSuffix: ' ', substituteRole: 'after' };
 
   const TERMS_JA = {
@@ -206,7 +206,7 @@
 
   // ---- 2回目以降の注（注形式だけ） ----
   // 2回目以降（間を挟んで）：著者は姓だけ、題名は短い形（Zotero の「短いタイトル」、無ければ題名）、引用頁。
-  // 直前と同じ本：「同上」「Ibid.」と引用頁（頁も同じなら、生成側で引用頁を外す）。
+  // 直前と同じ文書：「同上」「Ibid.」と引用頁（頁も同じなら、生成側で引用頁を外す）。
   const QUOTED_TABS = ['chapter', 'article', 'web'];
   const TARGETS = ['bib', 'cite', 'citeSub', 'citeIbid'];
   function subDefaults(sysKey, tabKeys) {

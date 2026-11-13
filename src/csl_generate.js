@@ -142,7 +142,8 @@
       'text-case': chip.caps === 'capitalize-first' ? 'capitalize-first' : '',
     };
     let inner = '';
-    const space = sys.labelSpace || '';
+    // ラベルと値の間（p. 42 の空白）。部品ごとに上書きできる（公式のスタイルから移した p42 など）。
+    const space = opt.labelSpace ?? (sys.labelSpace || '');
     switch (def.kind) {
       case 'names': inner = namesXml(chip, sys, fmt); break;
       case 'text': {
@@ -155,11 +156,12 @@
         break;
       case 'date': {
         const form = opt.form || 'year';
-        const dfmt = { ...fmt };
-        if (form === 'year') inner = `<date${attrs({ variable: chip.f, ...dfmt })}><date-part name="year"/></date>`;
-        else if (form === 'ym') inner = `<date${attrs({ variable: chip.f, form: 'text', 'date-parts': 'year-month', ...dfmt })}/>`;
-        else if (form === 'numeric') inner = `<date${attrs({ variable: chip.f, form: 'numeric', ...dfmt })}/>`;
-        else inner = `<date${attrs({ variable: chip.f, form: 'text', ...dfmt })}/>`;
+        // 元のスタイルのまま：公式のスタイルから移した <date> の書き方（Nov. 01, 2026 など）をそのまま使う
+        if (form === 'original' && opt.raw) inner = opt.raw.replace(/^<date\b/, `<date${attrs({ variable: chip.f, ...fmt })}`).replace(/\svariable="[^"]*"(?=[^>]*\svariable=)/, '');
+        else if (form === 'year') inner = `<date${attrs({ variable: chip.f, ...fmt })}><date-part name="year"/></date>`;
+        else if (form === 'ym') inner = `<date${attrs({ variable: chip.f, form: 'text', 'date-parts': 'year-month', ...fmt })}/>`;
+        else if (form === 'numeric') inner = `<date${attrs({ variable: chip.f, form: 'numeric', ...fmt })}/>`;
+        else inner = `<date${attrs({ variable: chip.f, form: 'text', ...fmt })}/>`;
         inner = withLabel(inner, chip, sys, def, space);
         break;
       }
@@ -188,7 +190,8 @@
   // （chap. 2、sec. 3。和文なら第2章）。付けないと、章なのか頁なのか区別できないため。
   function locatorXml(val, chip, sysKey, sys, def, space) {
     const pos = (chip.opt || {}).label || 'none';
-    const lab = '<label variable="locator" form="short"/>';
+    const sp = (chip.opt || {}).stripPeriods ? ' strip-periods="true"' : '';
+    const lab = `<label variable="locator" form="short"${sp}/>`;
     const dai = `<group><text value="第"/>${val}${lab}</group>`;
     let numeric;
     if (sysKey === 'ja' && pos !== 'before') {
@@ -208,12 +211,13 @@
     const pos = (chip.opt || {}).label || 'none';
     if (!def.term || pos === 'none') return inner;
     let lab;
+    const sp = (chip.opt || {}).stripPeriods ? 'true' : '';
     if (def.term === 'page' || def.term === 'locator') {
-      lab = `<label${attrs({ variable: chip.f, form: 'short' })}/>`;
+      lab = `<label${attrs({ variable: chip.f, form: 'short', 'strip-periods': sp })}/>`;
     } else if (def.term === 'accessed') {
       lab = `<text term="accessed"/>`;
     } else {
-      lab = `<text${attrs({ term: def.term, form: 'short' })}/>`;
+      lab = `<text${attrs({ term: def.term, form: 'short', 'strip-periods': sp })}/>`;
     }
     const parts = pos === 'before' ? [lab, inner] : [inner, lab];
     return `<group${attrs({ delimiter: space })}>${parts.join('')}</group>`;
@@ -221,7 +225,9 @@
 
   function namesXml(chip, sys, fmt) {
     const opt = chip.opt || {};
-    const n = sys.names || {};
+    // 部品ごとの人名の設定（公式のスタイルから移したとき、書式全体と違う値だけを持つ）が、書式全体の設定に優先する
+    const n = { ...(sys.names || {}), ...(opt.names || {}) };
+    if (opt.names && opt.names.precedesLast !== undefined) n.precedesLastInverted = opt.names.precedesLast;
     const short = opt.form === 'short';
     const nameAttrs = {
       form: short ? 'short' : '',
@@ -232,16 +238,22 @@
       'delimiter-precedes-et-al': n.precedesEtAl || '',
       'et-al-min': n.etAlMin || '',
       'et-al-use-first': n.etAlUseFirst || '',
-      'initialize-with': n.initialize && !short ? (n.initializeWith || '. ') : '',
+      'initialize-with': n.initialize && !short ? (n.initializeWith ?? '. ') : '',
       'name-as-sort-order': !short && opt.order === 'family' ? 'first' : (!short && opt.order === 'family-all' ? 'all' : ''),
       'sort-separator': !short && opt.order && opt.order !== 'given' ? (n.sortSeparator || ', ') : '',
     };
-    const nameEl = `<name${attrs(nameAttrs)}/>`;
+    // 姓の書き方（欧文）：すべて大文字（DUBOIS）か、スモールキャピタル（頭だけ大きく、残りは小さな大文字）。
+    const family = n.familyCase === 'uppercase' ? '<name-part name="family" text-case="uppercase"/>'
+      : n.familyCase === 'small-caps' ? '<name-part name="family" font-variant="small-caps"/>' : '';
+    // 頭文字の後ろに何も付けない（Brown E）ときは initialize-with="" を明示する（attrs は空の値を落とすため）
+    const na = attrs(nameAttrs) + (n.initialize && !short && n.initializeWith === '' ? ' initialize-with=""' : '');
+    const nameEl = family ? `<name${na}>${family}</name>` : `<name${na}/>`;
     const etal = n.etAlTerm === false ? '' : '<et-al term="et-al"/>';
     const role = opt.role || 'none';
     const label = (form, pos) => pos === 'before'
-      ? `<label${attrs({ form, suffix: n.roleBeforeSuffix ?? ' ', 'text-case': chip.caps === 'capitalize-first' ? 'capitalize-first' : '' })}/>`
-      : `<label${attrs({ form, prefix: n.roleAfterPrefix ?? '' })}/>`;
+      // 役割の語の前後の文字は、部品ごとに上書きできる（公式のスタイルから移した「 (Ed.)」など）
+      ? `<label${attrs({ form, prefix: opt.rolePrefix ?? '', suffix: opt.roleSuffix ?? n.roleBeforeSuffix ?? ' ', 'text-case': chip.caps === 'capitalize-first' ? 'capitalize-first' : '' })}/>`
+      : `<label${attrs({ form, prefix: opt.rolePrefix ?? n.roleAfterPrefix ?? '', suffix: opt.roleSuffix ?? '', 'text-case': chip.caps === 'capitalize-first' ? 'capitalize-first' : '' })}/>`;
     const roleForm = opt.roleForm || (role === 'before' ? 'verb' : 'short');
     const lab = role === 'none' ? '' : label(roleForm, role);
     let sub = '';
@@ -302,11 +314,11 @@
   function chooseXml(byTab, sysKey, sys, ctx, tabs) {
     const parts = [];
     let first = true;
-    for (const t of tabs || TYPE_TABS) {
+    for (const t of tabs) {
       if (t.key === 'other' || !t.types.length) continue;
       const tag = first ? 'if' : 'else-if';
       first = false;
-      parts.push(`<${tag} type="${t.types.join(' ')}">${chainXml(byTab[t.key] || [], sysKey, sys, ctx)}</${tag}>`);
+      parts.push(`<${tag} type="${t.types.join(' ')}">${chainXml(byTab[t.key], sysKey, sys, ctx)}</${tag}>`);
     }
     parts.push(`<else>${chainXml(byTab.other, sysKey, sys, ctx)}</else>`);
     return `<choose>${parts.join('')}</choose>`;
@@ -355,8 +367,7 @@
   }
   // base64 の文字には「-」が無いので、コメントの中に「--」は現れない。
   function embedModel(model) {
-    const m = JSON.parse(JSON.stringify(model));
-    return `<!-- ${MODEL_TAG} ${b64encode(JSON.stringify(m))} -->`;
+    return `<!-- ${MODEL_TAG} ${b64encode(JSON.stringify(model))} -->`;
   }
   function extractModel(cslText) {
     const re = new RegExp(`<!--\\s*${MODEL_TAG}\\s+([A-Za-z0-9+/=\\s]+?)\\s*-->`);
@@ -383,7 +394,7 @@
     const keys = only ? [only] : ['ja', 'en', ...extras];
     const tabs = tabsOf(model);
     // 注形式で「2回目以降の注を書き分ける」を入れたときは、注の位置で並びを分ける。
-    // 直前と同じ本：頁が違えば citeIbid の並び、頁も同じなら citeIbid から引用頁を外した並び（「同上。」）。
+    // 直前と同じ文書：頁が違えば citeIbid の並び、頁も同じなら citeIbid から引用頁を外した並び（「同上。」）。
     // 間を挟んだ2回目以降：citeSub。初出：cite。
     const noLocator = (byTab) => Object.fromEntries(Object.entries(byTab || {}).map(([k, c]) => [k, (c || []).filter((x) => !(x.t === 'field' && x.f === 'locator'))]));
     const citeBody = (sk) => {
@@ -425,12 +436,14 @@
       return attrs({ prefix: CL.prefix || '', suffix, delimiter: CL.delimiter || '' });
     };
 
+    // 公式のスタイルから移したときは、元の citation・bibliography の設定（重複の区別、同じ著者の2件目以降の ——— など）を使う
     const citeAttrs = attrs({
       'disambiguate-add-year-suffix': kind === 'author-date',
+      ...(model.citeAttrs || {}),
     });
+    const bibAttrs = attrs(model.bibAttrs || {});
     let sort = '';
-    if (kind === 'numeric') sort = '';
-    else {
+    if (kind !== 'numeric') {
       const keys = [];
       if (model.sortByLanguage && !only) keys.push('<key macro="lang-group"/>');
       keys.push('<key macro="sort-key"/>', '<key variable="issued"/>', '<key variable="title"/>');
@@ -444,13 +457,17 @@
       terms: '<term name="open-quote">“</term><term name="close-quote">”</term><term name="open-inner-quote">‘</term><term name="close-inner-quote">’</term>',
     };
     // 言語別：その書式の言語のロケールを既定にし、レイアウトは1つだけ。和文は多言語版と同じく “ ” に上書きする。
+    // 公式のスタイルから移したときは、元の <locale>（日付の書き方・用語）を欧文の前に置く（アプリの用語表が後から上書きする）
+    const srcLocales = (model.source && model.source.locales) || [];
+    const srcInfo = (model.source && model.source.kind === 'official') ? model.source : {};
     const body = only ? [
+      ...(only === 'en' ? srcLocales : []),
       localeXml(only, model.terms && model.terms[only], only === 'ja' ? quoteOpts : { options: quoteOpts.options }),
       ...macros,
       `<citation${citeAttrs}>`,
       `<layout${lay(only, 'cite')}><text macro="cite-${only}"/></layout>`,
       '</citation>',
-      '<bibliography>',
+      `<bibliography${bibAttrs}>`,
       sort,
       `<layout${lay(only, 'bib')}><text macro="bib-${only}"/></layout>`,
       '</bibliography>',
@@ -458,18 +475,22 @@
     const xml = [
       '<?xml version="1.0" encoding="utf-8"?>',
       opts.embed === false ? '' : embedModel(model),
-      `<style xmlns="http://purl.org/net/xbiblio/csl" class="${kind === 'note' ? 'note' : 'in-text'}" version="1.0" default-locale="${only ? (ONLY_LOCALE[only] || only) : 'ja-JP'}" page-range-format="expanded">`,
+      `<style xmlns="http://purl.org/net/xbiblio/csl" class="${kind === 'note' ? 'note' : 'in-text'}" version="1.0" default-locale="${only ? (ONLY_LOCALE[only] || only) : 'ja-JP'}" page-range-format="${esc(model.pageRangeFormat || 'expanded')}">`,
       '<info>',
       `<title>${esc(title)}</title>`,
       `<id>${esc(id)}</id>`,
+      // 公式のスタイルから組み直したときは、元のスタイルを template として記録し、元の作者の表示を保つ（CC BY-SA）
+      ...(srcInfo.template && srcInfo.template !== id ? [`<link href="${esc(srcInfo.template)}" rel="template"/>`] : []),
+      ...(srcInfo.credits || []),
       `<category citation-format="${kind}"/>`,
       `<summary>${esc('引用スタイル（CSL）編集アプリで作成')}</summary>`,
       `<updated>${now}</updated>`,
-      `<rights license="https://creativecommons.org/licenses/by-sa/3.0/">${esc(info.rights || 'This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 License')}</rights>`,
+      `<rights license="${esc(srcInfo.rightsLicense || 'https://creativecommons.org/licenses/by-sa/3.0/')}">${srcInfo.rights !== undefined ? srcInfo.rights : esc(info.rights || 'This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 License')}</rights>`,
       '</info>',
       ...(body || [
       // 句読点を引用符の内側に入れる設定は、既定ロケール（ja）に置かないと欧文のレイアウトにも効かない（citeproc-js で確認）。
       localeXml('ja', model.terms && model.terms.ja, quoteOpts),
+      ...srcLocales,
       localeXml('en', model.terms && model.terms.en),
       ...extras.map((k) => localeXml(k, model.terms && model.terms[k])),
       ...macros,
@@ -478,7 +499,7 @@
       `<layout locale="${esc(euroAttr)}"${lay('en', 'cite')}><text macro="cite-en"/></layout>`,
       `<layout${lay('ja', 'cite')}><text macro="cite-ja"/></layout>`,
       '</citation>',
-      '<bibliography>',
+      `<bibliography${bibAttrs}>`,
       sort,
       ...extras.map((k) => `<layout locale="${k}"${lay(k, 'bib')}><text macro="bib-${k}"/></layout>`),
       `<layout locale="${esc(euroAttr)}"${lay('en', 'bib')}><text macro="bib-en"/></layout>`,

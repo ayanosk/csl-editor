@@ -14,7 +14,6 @@
 
   const MARKABLE = new Set(['text', 'names', 'date', 'number', 'label', 'group', 'layout']);
   const OPEN = 0xE000, MAXN = 3200, CLOSE = OPEN + MAXN;
-  const isMark = (c) => c >= OPEN && c < OPEN + 2 * MAXN;
 
   // ---- XML を木にする --------------------------------------------------------------
   const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
@@ -134,7 +133,6 @@
     });
     return t;
   }
-  const strip = (s) => [...s].filter((ch) => !isMark(ch.charCodeAt(0))).join('');
 
   // 目印付きの文字列 → 目に見える各文字と、それを包む要素の番号の並び（外から内へ）
   function attribute(s) {
@@ -230,7 +228,7 @@
       }
       out[it.id] = rows;
     }
-    return { rows: out, note, hasBib };
+    return { rows: out };
   }
 
   // 元の木と編集の一覧から、目印なし・目印付きの両方で組み、表示用の HTML を作る。
@@ -249,7 +247,7 @@
         return { key: k, label, html: d.html, plain: html };
       });
     }
-    return { xml, tree, view, note: clean.note, hasBib: clean.hasBib, direct, total };
+    return { xml, tree, view, direct, total };
   }
 
   // ---- 要素の説明（画面に出す） ----------------------------------------------------------
@@ -306,7 +304,7 @@
   function isCsl(text) { return /<style[\s>][\s\S]*xmlns="http:\/\/purl\.org\/net\/xbiblio\/csl"/.test(text); }
   const titleOf = (xml) => unescape((xml.match(/<title>([^<]*)<\/title>/) || [])[1] || '');
 
-  const api = { parse, serialize, apply, instrument, strip, attribute, align, decorate, renderRows, build, describe, macroOf, getAttr, finalize, isCsl, titleOf, index, indexEid, unitIn, MAXN };
+  const api = { parse, serialize, apply, instrument, attribute, align, decorate, renderRows, build, describe, macroOf, getAttr, finalize, isCsl, titleOf, index, indexEid, unitIn, MAXN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CSLOfficial = api;
 })(typeof window !== 'undefined' ? window : this);

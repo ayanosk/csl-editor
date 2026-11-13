@@ -15,7 +15,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const r = await rows();
     const note = r[1] || '';
     const ok = note.includes(want) && !/章章|節節|節章/.test(r.join(''));
-    console.log(`${ok ? 'OK' : 'NG'} ${v.padEnd(16)} ${note} ／ 続けて別の箇所：${r[3] || ''}`);
+    console.log(`${ok ? 'OK' : 'NG'} ${v.padEnd(16)} ${note} ／ 直後に同じ文書の別の箇所：${r[3] || ''}`);
     if (!ok) errs.push(v);
   }
   await p.reload(); await wait(600);
