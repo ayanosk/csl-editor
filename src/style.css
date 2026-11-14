@@ -75,6 +75,10 @@ code { background: var(--accent-weak); padding: 0 4px; border-radius: 3px; }
 .brand { display: flex; flex-direction: column; line-height: 1.25; }
 .brand-name { font-weight: 700; font-size: 16px; }
 button.brand-name { border: none; background: none; padding: 0; color: inherit; cursor: pointer; text-align: left; }
+.bib-order { margin: 10px 0; font-size: 13px; }
+.bib-order summary { cursor: pointer; }
+.bib-order ol { margin: 6px 0; padding-left: 2em; line-height: 1.6; }
+.stack { display: flex; flex-direction: column; gap: 2px; }
 .sub-author { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .sub-author input { width: 8em; }
 .brand-icon { width: 22px; height: 22px; vertical-align: -5px; margin-right: 6px; border-radius: 5px; }
