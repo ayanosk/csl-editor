@@ -690,7 +690,9 @@
       oninput: (e) => { m.euroLangs = e.target.value.split(/[\s,、]+/).map((x) => x.trim().toLowerCase()).filter(Boolean); changed({ row: false }); },
     }));
     if (m.kind !== 'numeric') {
-      add('参考文献の並び', h('label', {}, h('input', { type: 'checkbox', checked: !!m.sortByLanguage, onchange: (e) => { m.sortByLanguage = e.target.checked; changed({ row: false }); } }), ' 和文を先に、欧文を後にまとめる'));
+      add('参考文献の並び', h('span', { class: 'stack' },
+        h('label', {}, h('input', { type: 'checkbox', checked: !!m.sortByLanguage, onchange: (e) => { m.sortByLanguage = e.target.checked; changed({ row: false }); } }), ' 和文を先に、欧文を後にまとめる'),
+        h('label', {}, h('input', { type: 'checkbox', checked: !!m.sortByReading, onchange: (e) => { m.sortByReading = e.target.checked; changed({ row: false }); } }), ' 和文の文献を、Zotero の「その他（Extra）」欄の読みで五十音順に並べる')));
     }
     // 同じ著者の2件目以降（MLA の「———.」など）。CSL の bibliography の subsequent-author-substitute。
     {
@@ -787,6 +789,18 @@
     return null;
   }
 
+  // 読みで並べるとき：和文の文献の「その他（Extra）」欄の1行目が読み（かな）か。
+  // 頭の「original-date: 1990」のような CSL の変数の行は、citeproc-js が取り除いてから並べるので飛ばす。
+  const CSL_LINE = /^([\-_a-z]+|[A-Z]+):\s*\S/;
+  const KANA_LINE = /^[\u3041-\u309f\u30a0-\u30ff\s　・]+$/;
+  function readingWarning(it) {
+    if (!state.model.sortByReading || sysOf(it).sys !== 'ja') return null;
+    const first = String(it.note || '').split('\n').map((l) => l.trim()).find((l) => l && !CSL_LINE.test(l));
+    if (!first) return '読みがないので、五十音順の並びでは後ろに回ります。Zotero の「その他（Extra）」欄の1行目に、著者の読みをひらがなで入れてください（例：やまだ はなこ）。';
+    if (!KANA_LINE.test(first)) return `「その他（Extra）」欄の1行目（${first.slice(0, 20)}）が読みになっていないので、その文字で並びます。読みを1行目に入れてください。`;
+    return null;
+  }
+
   let timer = null;
   function schedulePreview() {
     clearTimeout(timer);
@@ -855,7 +869,7 @@
         if (hasSubsequent()) citeRows = noteSequence(eng, id, items);
         else cite = eng.makeCitationCluster([{ id, locator: curLoc().value, label: curLoc().label }]);
       } catch (e) { cite = '（組めませんでした）'; }
-      const warn = langWarning(it);
+      const warn = [langWarning(it), readingWarning(it)].filter(Boolean).join(' ');
       const card = h('div', { class: 'item', 'data-id': id, 'data-sys': sys, 'data-tab': tab, 'data-authors': authorCountLabel(it), title: '押すと、この文献の書式を編集します',
         onclick: () => { state.ui.panel = sys; state.ui.tab = tab; state.ui.sel = null; renderPanels(); renderPreviewHighlight(); save(); } },
         h('div', { class: 'meta' },
@@ -873,8 +887,13 @@
       return card;
     });
     const hiddenBox = hiddenBoxOf(hiddenItems);
+    // 参考文献の並び順（組版エンジンが並べた順）。読みで五十音順・和文を先に、などの確かめに使う。
+    const orderBox = order.length ? h('details', { class: 'bib-order', open: !!state.ui.bibOrderOpen,
+      ontoggle: (e) => { state.ui.bibOrderOpen = e.target.open; save(); } },
+      h('summary', { text: `参考文献の並び順を見る（${order.length}件）` }),
+      h('ol', {}, ...order.map((id, k) => h('li', { html: stripDiv(entries[k]) })))) : null;
     $('previewList').replaceChildren(...nodes, h('p', { id: 'previewEmpty', class: 'muted small', hidden: true,
-      text: '条件に合う文献がありません。絞り込みを変えるか、「書誌を編集する」から「新しく入れる」で入れてみてください（言語ごとの書式なら、言語欄をその言語にします）。' }), hiddenBox || '');
+      text: '条件に合う文献がありません。絞り込みを変えるか、「書誌を編集する」から「新しく入れる」で入れてみてください（言語ごとの書式なら、言語欄をその言語にします）。' }), orderBox || '', hiddenBox || '');
     renderPreviewHighlight();
     // 種類ごとの件数を更新する
     if (isFormatPanel(state.ui.panel)) {
@@ -1031,6 +1050,7 @@
     ['accessed', '参照日', 'date', ['webpage'], null, '例：2026-11-1'],
     ['URL', 'URL', 'text', ALL, null, ''],
     ['DOI', 'DOI', 'text', ['article-journal', 'chapter', 'paper-conference', 'book'], null, '例：10.1234/abcd'],
+    ['note', 'その他（Extra）', 'lines', ALL, null, '五十音順に並べるときの読み。1行目にひらがなで（例：やまだ はなこ）'],
   ];
 
   // 赤い * を付ける欄（その種類の書誌に欠かせないもの）。保存を止めるのは MUST（言語と題名）が空のときだけ。
@@ -1109,6 +1129,10 @@
         ctl = h('input', { type: 'text', placeholder: ex, value: dateToText(it[key]) });
       } else if (kind === 'lang') {
         ctl = h('input', { type: 'text', list: 'langList', placeholder: ex, value: it[key] || '' });
+      } else if (kind === 'lines') {
+        // 複数行の欄（Zotero の「その他（Extra）」）。1行の入力欄だと改行が消え、保存すると中身が壊れる。
+        ctl = h('textarea', { rows: 2, placeholder: ex });
+        ctl.value = it[key] == null ? '' : String(it[key]);
       } else {
         ctl = h('input', { type: 'text', placeholder: ex, value: it[key] == null ? '' : String(it[key]) });
       }

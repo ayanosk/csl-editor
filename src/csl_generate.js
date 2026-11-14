@@ -422,6 +422,16 @@
     if (!only) macros.push(`<macro name="lang-group"><choose><if locale="${esc([...extras, ...euro].filter((l) => l !== 'ja').join(' '))}"><text value="1"/></if><else><text value="0"/></else></choose></macro>`);
     macros.push('<macro name="sort-key"><names variable="author"><name name-as-sort-order="all"/>'
       + '<substitute><names variable="editor"/><text variable="title"/></substitute></names></macro>');
+    // 読みで五十音順に並べる鍵：和文の文献は Zotero の「その他（Extra）」欄（CSL の note）に読みがあればそれ、
+    // 無ければ著者名。欧文の文献は Extra 欄を見ずに著者名（Extra にメモなどがあっても並びが崩れないように）。
+    // Extra の頭にある「original-date: 1990」のような CSL の変数の行は、citeproc-js が取り除いてから並べる。
+    const yomi = model.sortByReading && kind !== 'numeric' && (!only || only === 'ja');
+    if (yomi) {
+      const byNote = '<else-if variable="note"><text variable="note"/></else-if><else><text macro="sort-key"/></else>';
+      macros.push(only
+        ? `<macro name="sort-yomi"><choose><if variable="note"><text variable="note"/></if><else><text macro="sort-key"/></else></choose></macro>`
+        : `<macro name="sort-yomi"><choose><if locale="${esc([...extras, ...euro].filter((l) => l !== 'ja').join(' '))}"><text macro="sort-key"/></if>${byNote}</choose></macro>`);
+    }
 
     // 注・本文中の引用の括弧と区切りはスタイル全体で1つ。citeproc-js は、まとめた引用の
     // 開きを既定（和文）のレイアウトから、閉じと区切りを文献ごとのレイアウトから取るため、
@@ -446,6 +456,7 @@
     if (kind !== 'numeric') {
       const keys = [];
       if (model.sortByLanguage && !only) keys.push('<key macro="lang-group"/>');
+      if (yomi) keys.push('<key macro="sort-yomi"/>');
       keys.push('<key macro="sort-key"/>', '<key variable="issued"/>', '<key variable="title"/>');
       sort = `<sort>${keys.join('')}</sort>`;
     }

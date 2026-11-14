@@ -17,6 +17,7 @@
 - 和文と欧文（とフランス語など足した言語）で、別々の書き方を持てます。どちらで組むかは、Zotero の「言語」欄で決まります。Zotero（Word・Google ドキュメントのプラグイン）でも、LaTeX の citation-style-language（citeproc-lua）でも、この書き分けが効きます。
 - Zotero から書き出した書誌（CSL JSON）を読み込むと、自分の文献でプレビューできます。読み込まなければ見本の書誌で試せます。
 - 2回目以降の注（同上、前掲書、短縮形）を書き分けられます。
+- 和文の文献を、Zotero の「その他（Extra）」欄の1行目に入れた読みで、五十音順に並べられます。
 
 ## 4つの型について
 
@@ -54,6 +55,7 @@ node tests/split_export.js        # 言語別の書き出し（pandoc があれ�
 node tests/locator.js             # 引用箇所（頁・章・節）の組み方
 node tests/official.js            # 公式のスタイルの手直し（書き戻し・文字の対応・編集の効き目・書き出し）
 node tests/convert.js             # 公式のスタイルを部品に移す（大幅修正）：組み直した出力が元と同じか
+node tests/reading_sort.js        # 読みで五十音順に並べる（Extra 欄の1行目。欧文は著者名）
 bash tests/browser/run_all.sh     # ヘッドレスの Chrome で画面を操作する検証
 ```
 
