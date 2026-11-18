@@ -1803,6 +1803,7 @@
     $('btnStarter').addEventListener('click', openStarter);
     $('btnBrand').addEventListener('click', openStarter);
     $('btnPickItems').addEventListener('click', () => { $('dlgItemList').close(); readFile($('fileItems'), loadItems); });
+    $('btnImportItems').addEventListener('click', () => readFile($('fileItems'), loadItems));
     $('btnExport').addEventListener('click', exportCsl);
     $('btnExportSplit').addEventListener('click', openSplit);
     $('btnDoSplit').addEventListener('click', doSplit);
