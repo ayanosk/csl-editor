@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>使い方｜引用スタイル（CSL）編集アプリ</title>
+<!--
+  使い方のページ。このファイルがそのまま正本で、組む手順は無い（直したらそのままコミットする）。
+  画面の図は docs/guide/img/ にあり、node guide/shoot.js で撮り直せる（先に python3 build.py）。
+  節の id（#start #chips #tweak #export #sort #limits）は授業スライドなど外からリンクされるので変えない。
+-->
+<style>
+:root {
+  --bg: #f6f5f2;
+  --panel: #ffffff;
+  --ink: #1f2328;
+  --muted: #646b73;
+  --line: #d9d6cf;
+  --accent: #2f5d8a;
+  --accent-weak: #e3ecf5;
+  --code-bg: #eef0f2;
+  --mark: #d62d20;
+  --warn-bg: #fff4d6;
+  --warn-ink: #7a5300;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1d20;
+    --panel: #24272b;
+    --ink: #e6e6e3;
+    --muted: #a0a6ad;
+    --line: #3a3e44;
+    --accent: #7fb0e0;
+    --accent-weak: #2a3846;
+    --code-bg: #2d3136;
+    --mark: #e5534b;
+    --warn-bg: #3d3216;
+    --warn-ink: #f3d27a;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 1em; }
+body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.75; font-size: 16px; }
+main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+a { color: var(--accent); }
+header.top { border-bottom: 1px solid var(--line); padding-bottom: 0.8em; margin-bottom: 1.2em; }
+header.top h1 { font-size: 1.7em; line-height: 1.35; margin: 0 0 0.2em; }
+header.top .meta { color: var(--muted); font-size: 0.9em; margin: 0; }
+h2 { font-size: 1.35em; margin: 2.4em 0 0.6em; padding-bottom: 0.25em; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 1.1em; margin: 1.8em 0 0.5em; }
+p, ul, ol { margin: 0.4em 0 0.8em; }
+li { margin-bottom: 0.25em; }
+code, .str { background: var(--code-bg); border-radius: 3px; }
+code { padding: 0.05em 0.35em; font-size: 0.92em; }
+.str { display: block; padding: 0.5em 0.9em; border-left: 3px solid var(--line); margin: 0.3em 0 0.5em; border-radius: 0; }
+.note { color: var(--muted); font-size: 0.9em; }
+.box { background: var(--warn-bg); color: var(--warn-ink); padding: 0.7em 1em; border-radius: 6px; margin: 0.6em 0 1em; }
+nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0.8em 1.2em; }
+nav.toc ol { margin: 0; padding-left: 1.4em; }
+nav.toc ol ol { padding-left: 1.2em; font-size: 0.95em; }
+table { border-collapse: collapse; width: 100%; font-size: 0.93em; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 0.45em 0.7em; text-align: left; vertical-align: top; }
+th { background: var(--accent-weak); }
+.table-wrap { overflow-x: auto; }
+/* 画面の図と説明を左右に並べる。狭い画面では縦に積む */
+.shot { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start; margin: 0.6em 0 1em; }
+.shot img, figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+.shot .txt p { margin: 0 0 0.55em; }
+@media (max-width: 760px) { .shot { grid-template-columns: 1fr; } }
+figure { margin: 0.6em 0 1em; }
+.num { display: inline-block; min-width: 1.5em; height: 1.5em; line-height: 1.5em; border-radius: 50%; background: var(--mark); color: #fff; font-weight: 700; font-size: 0.85em; text-align: center; margin-right: 0.3em; }
+footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.88em; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="top">
+  <h1>引用スタイル（CSL）編集アプリ　使い方</h1>
+  <p class="meta">v0.2.0 に対応（2026年11月）｜<a href="../">アプリを開く</a></p>
+</header>
+
+<nav class="toc" aria-label="目次">
+  <ol>
+    <li><a href="#about">このアプリでできること</a></li>
+    <li><a href="#modes">3つの使い方</a></li>
+    <li><a href="#start">最初の画面：引用スタイルを選ぶ</a></li>
+    <li><a href="#chips">部品を並べる（型から組む・大幅修正）</a>
+      <ol>
+        <li><a href="#chips-screen">画面の見方</a></li>
+        <li><a href="#chip-edit">チップを直す</a></li>
+        <li><a href="#group">区切りとまとまり</a></li>
+        <li><a href="#lang">和文と欧文</a></li>
+        <li><a href="#rebuild">大幅修正：公式のスタイルを部品に移す</a></li>
+      </ol>
+    </li>
+    <li><a href="#tweak">微調整（公式のスタイルに少しだけ手を入れる）</a>
+      <ol>
+        <li><a href="#get-style">公式のスタイルを手に入れる</a></li>
+        <li><a href="#tweak-screen">読み込んだ画面</a></li>
+        <li><a href="#tweak-select">直したい箇所を押す</a></li>
+        <li><a href="#tweak-undo">1件ずつ元に戻す</a></li>
+      </ol>
+    </li>
+    <li><a href="#export">書き出して使う</a>
+      <ol>
+        <li><a href="#own-data">自分の文献で試す</a></li>
+        <li><a href="#export-file">書き出す</a></li>
+        <li><a href="#zotero">Zotero に入れて、ワープロで使う</a></li>
+      </ol>
+    </li>
+    <li><a href="#sort">五十音順に並べる</a></li>
+    <li><a href="#limits">できないこと・気をつけること</a></li>
+    <li><a href="#info">このアプリについて</a></li>
+  </ol>
+</nav>
+
+<h2 id="about">このアプリでできること</h2>
+<ul>
+  <li>日本語の画面で、<b>引用スタイル（CSL）</b>を作る・直す。CSL は、注や参考文献の書き方を記述する形式で、Zotero などの文献管理ソフトが読む</li>
+  <li>作ったスタイルを Zotero に入れると、Word・LibreOffice・Google ドキュメントで、注と参考文献リストがその書き方で組まれる</li>
+  <li><b>和文と欧文を書き分けられる</b>。文献ごとに、Zotero の「言語」欄で自動で切り替わる</li>
+  <li>ブラウザで開くだけで使える。ネットにつながっていなくても動く</li>
+  <li>読み込んだ書誌や .csl は<b>ブラウザの中だけで処理し、外部には送らない</b></li>
+</ul>
+<p class="note">β版のため、画面や出力は予告なく変わることがある。書き出したスタイルは、最後に Zotero などで確かめる。</p>
+
+<h2 id="modes">3つの使い方</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>使い方</th><th>出発点</th><th>向いているとき</th><th>和文の書式</th></tr></thead>
+  <tbody>
+    <tr><td><b>型から組む</b></td><td>Chicago 風・APA 風・MLA 風・IEEE 風</td><td>書きたい形が決まっていて、一から並べたい</td><td>作れる</td></tr>
+    <tr><td><b>公式のスタイルを微調整</b></td><td>Zotero で公開されている .csl</td><td>区切りや斜体など、少しだけ直したい</td><td>作れない</td></tr>
+    <tr><td><b>公式のスタイルを大幅修正</b></td><td>同上</td><td>公開されたスタイルを土台に、並びを大きく変えたい・和文の書式を足したい</td><td>作れる</td></tr>
+  </tbody>
+</table>
+</div>
+<ul>
+  <li>「型から組む」と「大幅修正」は、<b>同じ画面（部品を並べる画面）</b>で操作する。<a href="#chips">部品を並べる</a>を見る</li>
+  <li>微調整と大幅修正は、公式のスタイルを読み込んだあと、画面の左上でいつでも切り替えられる。微調整は<a href="#tweak">微調整</a>を見る</li>
+  <li>4つの型は典型的な形を簡略に再現した出発点で、公式のスタイルではない</li>
+</ul>
+
+<h2 id="start">最初の画面：引用スタイルを選ぶ</h2>
+<div class="shot">
+  <img src="img/01_start.png" alt="引用スタイルを選ぶ画面。上に「公式のスタイルを手直しする」の .csl をアップロードのボタン（1）、下に「型から組む」の Chicago 風などの型の一覧（2）">
+  <div class="txt">
+    <p><span class="num">1</span><b>公式のスタイルを手直しする</b>：.csl をアップロードする。前にこのアプリで書き出した .csl もここから読み込み、続きから直せる</p>
+    <p><span class="num">2</span><b>型から組む</b>：書きたい形に近い型を押す。和文と欧文の見本で、仕上がりの形を見比べられる</p>
+    <p>この画面は、上の「引用スタイルを選び直す」かアプリ名を押すと、また開く。<b>いまの編集は置き換わる</b></p>
+  </div>
+</div>
+
+<h2 id="chips">部品を並べる（型から組む・大幅修正）</h2>
+
+<h3 id="chips-screen">画面の見方</h3>
+<div class="shot">
+  <img src="img/02_chips.png" alt="部品を並べる画面。左に書式のタブ（1）、資料の種類（2）、参考文献と注の切り替え（3）、チップの列（4）、部品・まとめる・区切りを足す欄（5）。右にプレビュー（6）">
+  <div class="txt">
+    <p><span class="num">1</span>書式：<b>和文の書式</b>・<b>欧文の書式</b>・用語表・全体の設定</p>
+    <p><span class="num">2</span>資料の種類：図書・本の章・雑誌論文・ウェブページ。ほかの種類は「項目の種類を選ぶ」で足す。足していない種類は「その他」の並びで組む</p>
+    <p><span class="num">3</span>参考文献・注（初出）・注（2回目以降）・注（直前と同じ文書）を切り替える</p>
+    <p><span class="num">4</span>いま組んでいる並び。チップ（部品）をドラッグか ← → で並べ替える</p>
+    <p><span class="num">5</span>部品・まとまり・区切りを足す</p>
+    <p><span class="num">6</span>プレビュー。直すと、すぐに組み直される</p>
+  </div>
+</div>
+
+<h3 id="chip-edit">チップを直す</h3>
+<div class="shot">
+  <img src="img/03_chip.png" alt="「書名・題名」のチップ（1）を押すと、下に詳細（2）が開く。前に付ける文字、後ろに付ける文字、括弧、斜体などの欄と、← → 削除のボタン">
+  <div class="txt">
+    <p><span class="num">1</span>直したいチップを押す</p>
+    <p><span class="num">2</span>下に詳細が開く</p>
+    <ul>
+      <li>前に付ける文字・後ろに付ける文字</li>
+      <li>括弧（『 』「 」など）</li>
+      <li>斜体などの書体</li>
+      <li>← → で隣と入れ替え、「削除」で外す</li>
+    </ul>
+    <p>押したチップは赤く囲まれる。プレビューで、変わった所を確かめながら直す</p>
+  </div>
+</div>
+
+<h3 id="group">区切りとまとまり：空の欄があっても崩れないしくみ</h3>
+<ul>
+  <li><b>区切り</b>（、 , . など）は、チップの間に置く。<b>両側に部品があるときだけ出る</b>。部品が空の文献では、その部品と、その前の区切りが消える</li>
+  <li><b>まとめる</b>：「〔 〕で囲む」で部品をまとめると、中が全部空の文献では、まとまりごと消える</li>
+</ul>
+<p class="str">書名 〔訳者、出版者、年〕 と組んでおくと</p>
+<p class="str">訳者がいる本：『人文学のための計量分析入門』長野壮一訳、人文書院、2025年。<br>訳者がいない本：『人文学のためのテキストデータ構築入門』文学通信、2022年。</p>
+<ul>
+  <li>括弧（ ）は、まとまりの前後に付けると、中身が無いときに<b>空の括弧が残らない</b></li>
+  <li>Zotero で公開されているスタイルも、同じしくみ（CSL の group）で空の欄を処理している</li>
+</ul>
+
+<h3 id="lang">和文と欧文：Zotero の「言語」欄で決まる</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Zotero の「言語」欄</th><th>組まれる書式</th></tr></thead>
+  <tbody>
+    <tr><td><code>ja</code></td><td>和文の書式</td></tr>
+    <tr><td><code>en</code>・<code>fr</code>・<code>de</code> など</td><td>欧文の書式</td></tr>
+    <tr><td>空欄・言語コードとして読めない値</td><td>和文の書式（プレビューに警告が出る）</td></tr>
+  </tbody>
+</table>
+</div>
+<ul>
+  <li>取り込んだ書誌の「言語」欄は、空欄や「日本語」「jpn」など、まちまち。<b><code>ja</code>・<code>en</code> などの言語コードに直しておく</b></li>
+  <li>フランス語の文献は « » で組みたい、など言語ごとに変えたいときは、「＋ 言語ごとの書式」から言語コードを入れて書式を足す</li>
+  <li>2回目以降の注の短縮形には、Zotero の「簡略タイトル」欄が使われる。直前の注と同じ文書なら「同上」（頁が違えば「同上、45頁。」）。書き分けは「全体の設定」で切れる</li>
+</ul>
+
+<h3 id="rebuild">大幅修正：公式のスタイルを部品に移す</h3>
+<div class="shot">
+  <img src="img/07_rebuild.png" alt="公式のスタイルを大幅修正に切り替えた画面。左上に微調整・大幅修正と書式のタブ（1）、その下に、もとにしたスタイルと一致の数を示す帯（2）">
+  <div class="txt">
+    <p><span class="num">1</span>公式のスタイルを読み込んだあと（<a href="#get-style">手に入れ方</a>）、左上の「<b>大幅修正</b>」を押す。部品を並べる画面に変わる</p>
+    <p><span class="num">2</span>帯に、もとにしたスタイルと、見本の出力が元のスタイルと同じ件数が出る。違う見本は一覧で出る</p>
+    <ul>
+      <li><b>欧文の書式</b>が元のスタイル</li>
+      <li><b>和文の書式</b>を足して、多言語版にできる</li>
+      <li>操作は「型から組む」と同じ</li>
+    </ul>
+  </div>
+</div>
+
+<h2 id="tweak">微調整（公式のスタイルに少しだけ手を入れる）</h2>
+
+<h3 id="get-style">公式のスタイルを手に入れる</h3>
+<ol>
+  <li>Zotero Style Repository（<a href="https://www.zotero.org/styles" target="_blank" rel="noopener">https://www.zotero.org/styles</a>）でスタイルを探す</li>
+  <li>スタイル名を<b>右クリック</b>し、「名前を付けてリンク先を保存」（Safari は「リンク先のファイルをダウンロード」）で .csl を保存する</li>
+</ol>
+<div class="box"><b>ふつうにクリックすると</b>、Zotero Connector がスタイルを Zotero に入れてしまい、ファイルは手元に残らない</div>
+<ul>
+  <li>そうなったときは、Zotero のデータディレクトリの <b>styles</b> フォルダにある .csl を読み込む。データディレクトリは、Zotero の「設定」→「詳細」→「データディレクトリを表示」で開く</li>
+</ul>
+<!-- TODO: 各ブラウザの右クリックの項目名、保存したファイルの拡張子が .csl のままか、Zotero 日本語版の「詳細」「データディレクトリを表示」の表記、styles フォルダに .csl として置かれることを実機で確認する -->
+
+<h3 id="tweak-screen">読み込んだ画面</h3>
+<div class="shot">
+  <img src="img/04_official.png" alt="公式のスタイルを読み込んだ直後の画面。左上に微調整と大幅修正のタブ（1）、右のプレビューに元のスタイルで組んだ見本（2）">
+  <div class="txt">
+    <p><span class="num">1</span>最初は「<b>微調整</b>」が開く。「大幅修正」にはいつでも切り替えられる</p>
+    <p><span class="num">2</span>プレビューは、元のスタイルの出力のまま</p>
+    <p>微調整では、欧文の文献も和文の文献も、元のスタイルの書き方で組む。和文の書式を足すときは<a href="#rebuild">大幅修正</a>へ</p>
+    <p>スタイル名は、ファイル名に _edited を付けた名前になる</p>
+  </div>
+</div>
+
+<h3 id="tweak-select">直したい箇所を押す</h3>
+<div class="shot">
+  <img src="img/05_select.png" alt="プレビューで書名を押した画面。押した書名（1）と、同じ部品から出ている所が黄色く光る。左に、影響の範囲を示す帯（2）と、入れ替え・出さないのボタン（3）">
+  <div class="txt">
+    <p><span class="num">1</span>プレビューで直したい箇所を押す。<b>同じ部品から出ている所が、すべて光る</b></p>
+    <p><span class="num">2</span>直すと変わる範囲（参考文献と注など）が出る</p>
+    <p>左で、前後の文字・斜体・太字・大文字小文字を直す</p>
+    <p><span class="num">3</span>隣の部品と入れ替える、出さないようにする</p>
+  </div>
+</div>
+
+<h3 id="tweak-undo">手を入れた箇所は、1件ずつ元に戻せる</h3>
+<div class="shot">
+  <img src="img/06_edits.png" alt="手を入れた箇所の一覧（1）。「題名：斜体にしない」「出版者：出さない」が並び、それぞれに元に戻すのボタン">
+  <div class="txt">
+    <p><span class="num">1</span>手を入れた箇所が一覧になる</p>
+    <ul>
+      <li>「元に戻す」で1件ずつ戻せる</li>
+      <li>「すべて元に戻す」で読み込んだ直後に戻る</li>
+    </ul>
+    <p>手を入れていない部分は、元のスタイルのまま残る</p>
+  </div>
+</div>
+
+<h2 id="export">書き出して使う</h2>
+
+<h3 id="own-data">自分の文献で試す</h3>
+<ul>
+  <li>読み込まなくても、見本の書誌（和文・欧文の24件）で試せる</li>
+  <li>自分の文献で確かめるとき
+    <ol>
+      <li>Zotero で文献を選び（Ctrl か ⌘ を押しながらで複数）、右クリック →「選択された項目をエクスポート...」</li>
+      <li>形式で <b>CSL JSON</b> を選んで保存する</li>
+      <li>プレビューの「<b>見本の書誌を編集する</b>」→「Zotero から自分の文献を取り込む」で、保存したファイルを選ぶ</li>
+    </ol>
+  </li>
+  <li>各文献の「直す」で書誌を書き換え、「隠す」でプレビューから外せる。Zotero のデータは変わらない</li>
+  <li>Zotero の「参考文献を作成」でコピーした文章は使えない（整形済みの文字のため）</li>
+</ul>
+
+<h3 id="export-file">書き出す</h3>
+<figure><img src="img/08_export.png" alt="書き出しの欄。スタイル名の入力欄（1）、多言語版を書き出すのボタン（2）、言語別に書き出すのボタン（3）"></figure>
+<p><span class="num">1</span><b>スタイル名</b>：半角の英字・数字と <code>_</code> <code>-</code> <code>.</code> <code>( )</code> と空白で付ける（日本語は使えない）</p>
+<p><span class="num">2</span><b>多言語版を書き出す</b>：和文と欧文を1つのスタイルで書き分ける。<b>ふつうはこちら</b></p>
+<p><span class="num">3</span><b>言語別に書き出す</b>：書式ごとに別のスタイルを作る。pandoc など、言語による書き分けに対応しないソフト向け（2つ以上選ぶと zip にまとめる）</p>
+<ul>
+  <li>微調整のときは、ボタンは「<b>書き出す</b>」1つになる</li>
+  <li>書き出した .csl をアプリに読み込めば、続きから直せる</li>
+</ul>
+
+<h3 id="zotero">Zotero に入れて、ワープロで使う</h3>
+<ol>
+  <li>Zotero の「設定」→「引用」→「<b>＋</b>」から、書き出した .csl を選ぶ。多言語版では、確認の画面が出る場合がある。OK で入れられる</li>
+  <li>ワープロで、文書の引用スタイルを切り替える
+    <ul>
+      <li>Word・LibreOffice：Zotero のボタンの <b>Document Preferences</b></li>
+      <li>Google ドキュメント：Zotero のメニューの <b>Preferences</b></li>
+    </ul>
+  </li>
+  <li>注と参考文献リストを確かめる。和文の文献と欧文の文献が、それぞれの書式で組まれているか。違っていたら、Zotero でその文献の「言語」欄を見直す</li>
+</ol>
+<ul>
+  <li>直したスタイルを入れ直すときは、同じ名前のまま入れれば、Zotero では同じスタイルの更新になる</li>
+</ul>
+
+<h2 id="sort">五十音順に並べる <span class="note">（v0.2.0 から）</span></h2>
+<p>Zotero には読みの欄が無いので、「その他（Extra）」欄で代用する。</p>
+<ol>
+  <li>Zotero で、和文の文献の「その他（Extra）」欄の<b>1行目</b>に、著者の読みをひらがなで入れる（例：<code>やまだ はなこ</code>）</li>
+  <li>アプリの「全体の設定」→「参考文献の並び」で、「読みで五十音順に並べる」を選ぶ</li>
+  <li>プレビューの下の「参考文献の並び順を見る」で、並びを確かめる</li>
+</ol>
+<ul>
+  <li>読みの無い和文の文献は、読みのある文献の後ろに、著者名の文字コード順で並ぶ。プレビューに警告が出る</li>
+  <li>Extra 欄の1行目に別の文字（<code>Citation Key: …</code> など）があると、その文字で並ぶ。<code>original-date: 1990</code> のような CSL の変数の行は、先にあっても飛ばされる</li>
+  <li>欧文の文献は、Extra 欄を見ずに著者名で並べる</li>
+</ul>
+
+<h2 id="limits">できないこと・気をつけること</h2>
+<ul>
+  <li><b>読みの欄を持つこと</b>：Zotero と CSL には読みの欄が無い。五十音順は、上の<a href="#sort">Extra 欄の代用</a>で並べる。読みの欄を持てる Zotero の派生版 Jurism もある</li>
+  <li><b>規定どおりかの保証</b>：4つの型は出発点。提出先の規定と見比べて確かめる</li>
+  <li><b>Zotero との細部の一致</b>：組版エンジンは、Zotero が中で使っているのと同じ版の citeproc-js。ただし Zotero 側で手が入っているので、細かい出力が違うことがある。最後は Zotero で確かめる</li>
+  <li><b>多言語版は Zotero 向け</b>：多言語版は CSL の拡張（CSL-M）を使う。標準の CSL しか読まないソフトでは、「言語別に書き出す」を使う</li>
+</ul>
+
+<h2 id="info">このアプリについて</h2>
+<ul>
+  <li>アプリ：<a href="https://ayanosk.github.io/csl-editor/">https://ayanosk.github.io/csl-editor/</a></li>
+  <li>ソースコード：<a href="https://github.com/ayanosk/csl-editor">https://github.com/ayanosk/csl-editor</a>（AGPL-3.0）</li>
+  <li>不具合や気づいたこと：<a href="https://github.com/ayanosk/csl-editor/issues">https://github.com/ayanosk/csl-editor/issues</a></li>
+  <li>組版エンジン：citeproc-js 2.4.63（© 2009-2019 Frank Bennett、CPAL 1.0 または AGPL 3.0）</li>
+  <li>ロケール：CSL プロジェクトの locales（CC BY-SA 3.0）</li>
+  <li>作業中の状態は、そのブラウザの中（localStorage）にだけ保存される</li>
+</ul>
+
+<footer>作成：小風綾乃（2026年）。作成には Anthropic の Claude Code を用いた。画面は v0.1.0 で撮影。</footer>
+
+</main>
+</body>
+</html>

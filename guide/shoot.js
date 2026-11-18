@@ -1,4 +1,4 @@
-// 使い方スライド（guide/csl_editor_guide.md）の画面を撮る。
+// 使い方のページ（docs/guide/index.html）の画面を撮り、docs/guide/img/ に書き出す。
 // 使い方：node guide/shoot.js   （先に python3 build.py で docs/index.html を組んでおく）
 // 赤枠と番号は、撮影のときだけページに重ねる。アプリ本体には手を入れない。
 'use strict';
@@ -7,7 +7,7 @@ const ROOT = path.join(__dirname, '..');
 const { puppeteer, CHROME } = require(path.join(ROOT, 'tests/browser/_puppeteer.js'));
 const HTML = path.join(ROOT, 'docs/index.html');
 const FIX = path.join(ROOT, 'tests/fixtures/chicago-notes-bibliography.csl');
-const OUT = path.join(__dirname, 'img');
+const OUT = path.join(ROOT, 'docs/guide/img');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 fs.mkdirSync(OUT, { recursive: true });
 
