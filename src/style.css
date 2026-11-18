@@ -200,7 +200,12 @@ dialog h2 { font-size: 17px; margin: 0 0 8px; }
 .starter-list .how { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 10px; }
 .starter-list .ex { display: grid; grid-template-columns: 2.6em 1fr; gap: 6px; font-size: 12px; margin-top: 3px; }
 .starter-list .ex-k { color: var(--muted); }
-.help-steps li { margin-bottom: 6px; }
+.help-steps > li { margin-bottom: 10px; }
+.help-steps details, #dlgHelp form > details { margin: 4px 0 0 0; }
+.help-steps details p, #dlgHelp form > details p, #dlgHelp form > details ul { margin: 4px 0 6px 1.1em; font-size: 13px; }
+#dlgHelp summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+.help-actions { gap: 8px; }
+.help-note { margin: 2px 0; font-size: 13px; color: var(--muted); }
 .toast {
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--panel);
   padding: 8px 16px; border-radius: 6px; font-size: 13px; z-index: 20;

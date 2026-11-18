@@ -1,5 +1,5 @@
 // 言語別の書き出し：書式を選ぶ画面、2つ以上で zip（unzip -t で中身と CRC を検査）、1つなら .csl。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs'), path = require('path'), cp = require('child_process');
 const [html, sp] = process.argv.slice(2);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -13,6 +13,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await p.setViewport({ width: 1400, height: 1000 });
   await p.goto('file://' + html); await wait(500);
   await p.evaluate(() => localStorage.clear()); await p.reload(); await wait(500);
+  await toStarter(p);
   await p.evaluate(() => document.querySelectorAll('#starterList button')[0].click()); await wait(300);
   await p.click('.add-lang'); await wait(200); await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
   console.log('ボタン:', await p.evaluate(() => [document.getElementById('btnExport').textContent, document.getElementById('btnExportSplit').textContent].join(' / ')));

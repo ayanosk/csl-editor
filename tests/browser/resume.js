@@ -1,6 +1,6 @@
 // ヘッドレスの Chrome でアプリを操作する検証。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
 // puppeteer-core は marp-cli に同梱のものを使う（PUPPETEER_CORE で差し替え可）。Chrome は CHROME で差し替え可。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs');
 const [html, sp] = process.argv.slice(2);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -16,6 +16,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const st = () => p.evaluate(() => ({ open: document.getElementById('dlgStarter').open, starter: CSLApp.state.model.starter, title: document.getElementById('styleTitle').value }));
   console.log('起動時:', JSON.stringify(await st()));
   // 1) ボタンから
+  await toStarter(p);
   const [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnDlgLoadCsl')]);
   await fc.accept([sp + '/test_apa.csl']); await wait(500);
   console.log('ボタンで test_apa.csl:', JSON.stringify(await st()));

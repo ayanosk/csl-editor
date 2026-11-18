@@ -22,4 +22,8 @@ if (!CHROME || !fs.existsSync(CHROME)) {
   console.error('Google Chrome が見つかりません。CHROME で実行ファイルの場所を指定してください。');
   process.exit(2);
 }
-module.exports = { puppeteer: findPuppeteer(), CHROME };
+// 初めて開いたときは使い方の画面が出る。開いていれば「アプリの引用スタイルから始める」を押して、引用スタイルを選ぶ画面へ進む。
+async function toStarter(p) {
+  await p.evaluate(() => { const d = document.getElementById('dlgHelp'); if (d && d.open) document.getElementById('btnHelpStarter').click(); });
+}
+module.exports = { puppeteer: findPuppeteer(), CHROME, toStarter };

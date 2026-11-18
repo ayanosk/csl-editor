@@ -1,5 +1,5 @@
 // Zotero からの取り込み：一覧の画面から。形式を選び間違えたら形式の名前を挙げて断り、CSL JSON なら取り込む。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs'), path = require('path');
 const [html, sp] = process.argv.slice(2);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -17,6 +17,7 @@ const files = {
   for (const [n, t] of Object.entries(files)) fs.writeFileSync(path.join(sp, n), t);
   await p.goto('file://' + html); await wait(500);
   await p.evaluate(() => localStorage.clear()); await p.reload(); await wait(500);
+  await toStarter(p);
   await p.evaluate(() => document.querySelectorAll('#starterList button')[0].click()); await wait(300);
   console.log('上の帯:', await p.evaluate(() => [...document.querySelectorAll('.actions button')].map((x) => x.textContent).join(' / ')));
   const pick = async (n) => {

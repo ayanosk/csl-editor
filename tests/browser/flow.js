@@ -1,6 +1,6 @@
 // ヘッドレスの Chrome でアプリを操作する検証。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
 // puppeteer-core は marp-cli に同梱のものを使う（PUPPETEER_CORE で差し替え可）。Chrome は CHROME で差し替え可。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const SP = process.argv[3];
 const FIX = __dirname;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -16,6 +16,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await p.setViewport({ width: 1400, height: 1000 });
   await p.goto('file://' + process.argv[2]);
   await wait(500);
+  await toStarter(p);
   await p.evaluate(() => document.querySelectorAll('#starterList button')[0].click());
   await wait(300);
   // 1) CSL JSON を読み込む
@@ -62,9 +63,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await p.click('#btnBrand');
   await wait(200);
   if (!(await p.$eval('#dlgStarter', (n) => n.open))) errs.push('アプリ名を押しても選び直す画面が開かない');
+  await toStarter(p);
   await p.evaluate(() => document.querySelectorAll('#starterList button')[2].click());
   await wait(300);
   await p.click('#btnStarter'); await wait(200);
+  await toStarter(p);
   [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnDlgLoadCsl')]);
   await fc.accept([SP + '/dl/' + files.find((f) => f.endsWith('.csl'))]);
   await wait(600);

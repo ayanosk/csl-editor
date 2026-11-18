@@ -1807,6 +1807,8 @@
     $('btnExportSplit').addEventListener('click', openSplit);
     $('btnDoSplit').addEventListener('click', doSplit);
     $('btnHelp').addEventListener('click', () => $('dlgHelp').showModal());
+    $('btnHelpUpload').addEventListener('click', () => readFile($('fileCsl'), (text, name) => { if (loadCsl(text, name)) $('dlgHelp').close(); }));
+    $('btnHelpStarter').addEventListener('click', () => { $('dlgHelp').close(); openStarter(); });
     $('btnChangelog').addEventListener('click', () => $('dlgChangelog').showModal());
     $('btnAddItem').addEventListener('click', openItemList);
     $('btnNewItem').addEventListener('click', () => { $('dlgItemList').close(); openItemEditor(null); });
@@ -1823,7 +1825,7 @@
     setupCslDrop();
     renderPanels();
     renderPreview();
-    if (!restored) openStarter();
+    if (!restored) $('dlgHelp').showModal(); // 初めて開いたときは、アプリの説明と使い方から
   }
   window.CSLApp = { state, renderPreview, editedTitle, get offView() { return offView; } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

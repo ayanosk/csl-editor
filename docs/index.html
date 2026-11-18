@@ -208,7 +208,12 @@ dialog h2 { font-size: 17px; margin: 0 0 8px; }
 .starter-list .how { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 10px; }
 .starter-list .ex { display: grid; grid-template-columns: 2.6em 1fr; gap: 6px; font-size: 12px; margin-top: 3px; }
 .starter-list .ex-k { color: var(--muted); }
-.help-steps li { margin-bottom: 6px; }
+.help-steps > li { margin-bottom: 10px; }
+.help-steps details, #dlgHelp form > details { margin: 4px 0 0 0; }
+.help-steps details p, #dlgHelp form > details p, #dlgHelp form > details ul { margin: 4px 0 6px 1.1em; font-size: 13px; }
+#dlgHelp summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+.help-actions { gap: 8px; }
+.help-note { margin: 2px 0; font-size: 13px; color: var(--muted); }
 .toast {
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--panel);
   padding: 8px 16px; border-radius: 6px; font-size: 13px; z-index: 20;
@@ -420,45 +425,85 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
 </li><li>
 2026-11-13：大幅修正、アイコン、フッターの表示、問い合わせ先（Issues）を加え、全体の重複を整理する。
 </li></ul></div>
-    <p class="muted small">この HTML を組んだ日：2026-11-18。不具合の報告やご意見は、<a href="https://github.com/ayanosk/csl-editor/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお寄せください。</p>
+    <p class="muted small">この HTML を組んだ日：2026-11-19。不具合の報告やご意見は、<a href="https://github.com/ayanosk/csl-editor/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお寄せください。</p>
     <div class="dlg-actions"><button value="cancel">閉じる</button></div>
   </form>
 </dialog>
 
 <dialog id="dlgHelp">
   <form method="dialog">
-    <h2>使い方</h2>
-    <p>画面の図つきの説明は、<a href="https://ayanosk.github.io/csl-editor/guide/" target="_blank" rel="noopener">使い方のページ</a>にあります。</p>
+    <h2>引用スタイル（CSL）編集アプリ</h2>
+    <p>このアプリは、Zotero で日本語に対応した CSL を編集するのをサポートするためのアプリです。</p>
+    <h3>使い方</h3>
+    <p>詳しい操作方法は、<a href="https://ayanosk.github.io/csl-editor/guide/" target="_blank" rel="noopener">使い方のページ</a>をご覧ください。</p>
+    <p>このアプリでは、公式のスタイルを手直しする方法と、アプリが用意した引用スタイルから自分の引用スタイルに調整する方法の2種類が使えます。</p>
     <ol class="help-steps">
-      <li><b>公式のスタイルを手直しする</b>：<a href="https://www.zotero.org/styles" target="_blank" rel="noopener">Zotero のスタイル一覧</a>からダウンロードした .csl を、最初の画面でアップロードします。左の上で「微調整」と「大幅修正」を選べます。<b>微調整</b>では、元のスタイルの書き方にそのまま手を入れます。右のプレビューで直したい箇所を押すと、その部品と、同じ部品から出ている所がすべて光り、左で前後の文字・区切り・斜体などを直したり、出さないようにしたり、隣の部品と入れ替えたりできます。手を入れた箇所は一覧になり、1件ずつ元に戻せます。<b>大幅修正</b>では、元のスタイルを部品（チップ）に移し、下の「部品を並べる」と同じように、資料の種類ごとに部品を足したり並べ替えたりできます。和文の書式も入るので、多言語版を作れます。元のスタイルと出力が違う見本は、上の帯に一覧で出ます。元のスタイルの手を入れていない部分は、そのまま残ります。</li>
-      <li><b>引用スタイルを選ぶ</b>：最初に開く画面です（あとから「引用スタイルを選び直す」かアプリ名を押すと、また開きます。いまの編集は置き換わります）。Chicago 風・APA 風・MLA 風・IEEE 風から、書きたい形に近いものを選びます。各スタイルの典型的な形を簡略に再現した出発点です。公式のスタイルではなく、各団体とは関係ありません。規定どおりかは、それぞれの規定で確かめてください。前に書き出した .csl があれば、それを読み込んで続きから直せます。</li>
-      <li><b>自分の文献で試す</b>：プレビューの「見本の書誌を編集する」から、Zotero の文献を取り込めます。Zotero で文献を選んで右クリック →「選択された項目をエクスポート...」→ 形式「CSL JSON」で保存したファイルを選ぶと、自分の文献でプレビューできます。読み込まなければ見本データで練習できます。プレビューの「見本の書誌を編集する」で文献を選んで直すことも、新しく入れることもできます。各文献の「直す」でも書き換えられます。「隠す」はその文献をプレビューに出さないだけで、データは残ります（プレビューの下の「隠した文献」から戻せます）。「参考文献を作成」でコピーした文章は使えません（整形済みの文字なので、組み直せないため）。</li>
-      <li><b>部品を並べる</b>：左の「和文の書式」「欧文の書式」で、資料の種類ごとに部品（チップ）を並べます。チップはドラッグか ← → で動かせます。押すと、括弧や前後の文字を変えられます。資料の種類は、図書・本の章・雑誌論文・ウェブページが既定です。学位論文や新聞記事などを別の並びで組みたいときは、「項目の種類を選ぶ」でチェックを入れます。チェックの無い種類は「その他」の並びで組みます。</li>
-      <li><b>区切り</b>：チップの間には区切り（、 , . など）を置きます。区切りは両側に部品があるときだけ出ます。部品が空の文献では、<b>その部品と、その前の区切りが消えます</b>。</li>
-      <li><b>まとめる</b>：「〔 〕で囲む」で部品をまとめると、中が全部空の文献では、まとまりごと消えます。たとえば「書名. 〔訳者, 出版者, 年〕」とまとめれば、訳者のいない本でも「書名. 出版者, 年」になります。括弧（ ）は、まとまりの前後に付けると、中身が無いときに空の括弧が残りません。Zotero の公開スタイルも、同じ仕組み（CSL の group）で空欄を処理しています。</li>
-      <li><b>書き出す</b>：スタイル名は半角の英字・数字と <code>_</code> <code>-</code> <code>.</code> <code>( )</code> と空白で付けます（日本語は使えません）。型から始めたときのスタイル名は My_Chicago_style のようになります。前に書き出した .csl を読み込むと、ファイル名に _edited を付けた名前になり、ID も新しくなります（Zotero では元のスタイルと別に入ります。_edited の付いたものをもう一度読み込んで直したときは、名前も ID もそのままなので、Zotero では同じスタイルの更新になります）。ふつうは「多言語版を書き出す」で、和文と欧文を1つのスタイルで書き分けます。Zotero でも、文献の「言語」欄に <code>ja</code> や <code>en</code> が入っていれば、そのまま書き分けます（入れるときに確認の画面が出る場合があります。OK で入れられます）。言語による書き分けに対応しないソフト（pandoc など）で使うときは「言語別に書き出す」で、書式ごとのスタイルを作ります（2つ以上選ぶと zip にまとめます）。保存したら、Zotero の 設定 → 引用 →「＋」から入れます。</li>
+      <li>土台にする引用スタイルを選ぶ
+        <details><summary>公式のスタイルを手直しする</summary>
+          <p><a href="https://www.zotero.org/styles" target="_blank" rel="noopener">Zotero のスタイル一覧</a>からダウンロードした .csl を、最初の画面でアップロードします。前にこのアプリで書き出した .csl も、続きから直せます。</p>
+        </details>
+        <details><summary>アプリが用意した引用スタイルから始める</summary>
+          <p>Chicago 風・APA 風・MLA 風・IEEE 風から、書きたい形に近いものを選びます。各スタイルの典型的な形を簡略に再現した出発点です。公式のスタイルではなく、各団体とは関係ありません。規定どおりかは、それぞれの規定で確かめてください。</p>
+          <p>最初の画面は、あとから「引用スタイルを選び直す」かアプリ名を押すことで、また開きます。<b>ただしそれまでの編集は破棄されるため、後から復元したい場合は一度書き出してください。</b>書き出した .csl は、最初の画面でアップロードすると続きから直せます。</p>
+        </details>
+      </li>
+      <li>右のプレビュー画面を見ながら、好みのスタイルに整える
+        <details><summary>部品を並べる</summary>
+          <p>左の「和文の書式」「欧文の書式」で、資料の種類ごとに部品（チップ）を並べます。チップはドラッグか ← → で動かせます。押すと、括弧や前後の文字を変えられます。</p>
+          <p>資料の種類は、図書・本の章・雑誌論文・ウェブページが既定です。学位論文や新聞記事などを別の並びで組みたいときは、「項目の種類を選ぶ」でチェックを入れます。チェックの無い種類は「その他」の並びで組みます。</p>
+        </details>
+        <details><summary>区切りを足す・引く</summary>
+          <p>チップの間には区切り（、 , . など）を置きます。区切りは両側に部品があるときだけ出ます。部品が空の文献では、その部品と、その前の区切りが消えます。</p>
+        </details>
+        <details><summary>まとめる</summary>
+          <p>「〔 〕で囲む」で部品をまとめると、中が全部空の文献では、まとまりごと消えます。たとえば「書名. 〔訳者, 出版者, 年〕」とまとめれば、訳者のいない本でも「書名. 出版者, 年」になります。括弧（ ）は、まとまりの前後に付けると、中身が無いときに空の括弧が残りません。Zotero の公開スタイルも、同じ仕組み（CSL の group）で空欄を処理しています。</p>
+        </details>
+        <details><summary>公式のスタイルを手直ししているとき（微調整・大幅修正）</summary>
+          <p>左の上で「微調整」と「大幅修正」を選べます。</p>
+          <p>微調整では、元のスタイルの書き方にそのまま手を入れます。右のプレビューで直したい箇所を押すと、その部品と、同じ部品から出ている所がすべて光り、左で前後の文字・区切り・斜体などを直したり、出さないようにしたり、隣の部品と入れ替えたりできます。手を入れた箇所は一覧になり、1件ずつ元に戻せます。</p>
+          <p>大幅修正では、元のスタイルを部品（チップ）に移し、「部品を並べる」と同じように、資料の種類ごとに部品を足したり並べ替えたりできます。和文の書式も入るので、多言語版を作れます。元のスタイルと出力が違う見本は、上の帯に一覧で出ます。元のスタイルの手を入れていない部分は、そのまま残ります。</p>
+        </details>
+        <details><summary>自分の文献で確かめる</summary>
+          <p>プレビューの「見本の書誌を編集する」から、Zotero の文献を取り込めます。Zotero で文献を選んで右クリック →「選択された項目をエクスポート...」→ 形式「CSL JSON」で保存したファイルを選ぶと、自分の文献でプレビューできます。読み込まなければ見本データで練習できます。</p>
+          <p>同じ画面で文献を選んで直すことも、新しく入れることもできます。各文献の「直す」でも書き換えられます。「隠す」はその文献をプレビューに出さないだけで、データは残ります（プレビューの下の「隠した文献」から戻せます）。「参考文献を作成」でコピーした文章は使えません（整形済みの文字なので、組み直せないため）。</p>
+        </details>
+      </li>
+      <li>引用スタイルのタイトルを調整する
+        <p class="help-note">.csl のファイル名ではなく、上の「スタイル名」に入力された名前が、引用スタイルの名前として使われます。</p>
+        <details><summary>付けられる名前と、読み込んだスタイルの名前</summary>
+          <p>スタイル名は半角の英字・数字と <code>_</code> <code>-</code> <code>.</code> <code>( )</code> と空白で付けます（日本語は使えません）。型から始めたときのスタイル名は My_Chicago_style のようになります。</p>
+          <p>前に書き出した .csl を読み込むと、ファイル名に _edited を付けた名前になり、ID も新しくなります（Zotero では元のスタイルと別に入ります）。_edited の付いたものをもう一度読み込んで直したときは、名前も ID もそのままなので、Zotero では同じスタイルの更新になります。</p>
+        </details>
+      </li>
+      <li>多言語版で書き出し、Zotero の 設定 → 引用 → スタイル → ファイルから追加する
+        <details><summary>多言語版と、言語別に書き出す場合</summary>
+          <p>多言語版は、和文と欧文を1つのスタイルで書き分けます。Zotero でも、文献の「言語」欄に <code>ja</code> や <code>en</code> が入っていれば、そのまま書き分けます（入れるときに確認の画面が出る場合があります。OK で入れられます）。</p>
+          <p>言語による書き分けに対応しないソフト（pandoc など）で使うときは「言語別に書き出す」で、書式ごとのスタイルを作ります（2つ以上選ぶと zip にまとめます）。</p>
+        </details>
+      </li>
     </ol>
-    <h3>和文と欧文</h3>
-    <p>どちらの書式で組むかは、Zotero の「言語」欄で決まります。<code>ja</code> なら和文、<code>en</code> <code>fr</code> <code>de</code> などなら欧文です。欄が空の文献は和文の書式で組みます。プレビューに警告が出たら、Zotero で言語欄を直してください。</p>
-    <p>多言語版は、Zotero（Word・Google ドキュメントのプラグイン）でも、LaTeX の citation-style-language パッケージ（citeproc-lua）でも、言語欄に従って書き分けます。pandoc は言語による書き分けを読めないので、「言語別に書き出す」で作ったスタイルを使います。</p>
-    <p>英語は「欧文の書式」が既定です。フランス語の文献は « » や「et」で組みたい、など言語ごとに変えたいときは、「＋ 言語ごとの書式」から言語コード（<code>fr</code> <code>de</code> など）を入れて足します。その言語の文献だけが、足した書式で組まれます。</p>
-    <h3>2回目以降の注</h3>
-    <p>注形式では、「注（2回目以降）」と「注（直前と同じ文書）」の並びを別に作れます。間に別の注を挟んで同じ文書を引くと短縮形（山田『デジタル史料学入門』50頁）、直前の注と同じ文書なら「同上」（頁も同じなら「同上。」、頁が違えば「同上、45頁。」）になります。短縮形の題名には Zotero の「短いタイトル」欄が使われます。書き分けは「全体の設定」で切れます。</p>
-    <h3>五十音順に並べる</h3>
-    <p>Zotero には読みの欄がないので、「その他（Extra）」欄で代用します。和文の文献の Extra 欄の<b>1行目</b>に、著者の読みをひらがなで入れ（例：<code>やまだ はなこ</code>）、「全体の設定」の「参考文献の並び」で「読みで五十音順に並べる」を選びます。Extra 欄は、組版エンジンには CSL の <code>note</code> として渡ります。</p>
-    <ul>
-      <li>読みのない和文の文献は、読みのある文献の後ろに、著者名の文字コード順で並びます。プレビューに警告が出ます。</li>
-      <li>Extra 欄の1行目に別の文字（<code>Citation Key: …</code> など）があると、その文字で並びます。<code>original-date: 1990</code> のような CSL の変数の行は、先にあっても飛ばされます。</li>
-      <li>欧文の文献は、Extra 欄を見ずに著者名で並べます。</li>
-      <li>並び順は、プレビューの下の「参考文献の並び順を見る」で確かめられます。</li>
-    </ul>
-    <h3>CSL ではできないこと</h3>
-    <ul>
-      <li><b>読みの欄を持つこと</b>：Zotero と CSL には読みの欄がないので、上のように Extra 欄で代用します（読みを持てる Jurism という派生版もあります）。</li>
-    </ul>
-    <h3>このアプリについて</h3>
-    <p class="muted small">組版エンジンは citeproc-js 2.4.63（© 2009-2019 Frank Bennett、CPAL 1.0 または AGPL 3.0 の選択）。Zotero が中で使っているのと同じ版のエンジンですが、Zotero 側で手が入っているので、細かい出力が違うことがあります。最後は Zotero に入れて確かめてください。ロケールは CSL プロジェクトの locales-*.xml（日・英・仏・独・伊・西・蘭・葡・羅・露、CC BY-SA 3.0）。ライセンスの全文と、埋め込んだソースは、この HTML ファイルの中にそのまま入っています。作業中の状態はこのブラウザの中にだけ保存され、どこにも送られません。</p>
-    <div class="dlg-actions"><button value="cancel">閉じる</button></div>
+    <h3>もっと詳しく</h3>
+    <details><summary>和文と欧文</summary>
+      <p>どちらの書式で組むかは、Zotero の「言語」欄で決まります。<code>ja</code> なら和文、<code>en</code> <code>fr</code> <code>de</code> などなら欧文です。欄が空の文献は和文の書式で組みます。プレビューに警告が出たら、Zotero で言語欄を直してください。</p>
+      <p>多言語版は、Zotero（Word・Google ドキュメントのプラグイン）でも、LaTeX の citation-style-language パッケージ（citeproc-lua）でも、言語欄に従って書き分けます。pandoc は言語による書き分けを読めないので、「言語別に書き出す」で作ったスタイルを使います。</p>
+      <p>英語は「欧文の書式」が既定です。フランス語の文献は « » や「et」で組みたい、など言語ごとに変えたいときは、「＋ 言語ごとの書式」から言語コード（<code>fr</code> <code>de</code> など）を入れて足します。その言語の文献だけが、足した書式で組まれます。</p>
+    </details>
+    <details><summary>2回目以降の注</summary>
+      <p>注形式では、「注（2回目以降）」と「注（直前と同じ文書）」の並びを別に作れます。間に別の注を挟んで同じ文書を引くと短縮形（山田『デジタル史料学入門』50頁）、直前の注と同じ文書なら「同上」（頁も同じなら「同上。」、頁が違えば「同上、45頁。」）になります。短縮形の題名には Zotero の「短いタイトル」欄が使われます。書き分けは「全体の設定」で切れます。</p>
+    </details>
+    <details><summary>五十音順に並べる</summary>
+      <p>Zotero には読みの欄がないので、「その他（Extra）」欄で代用します。和文の文献の Extra 欄の1行目に、著者の読みをひらがなで入れ（例：<code>やまだ はなこ</code>）、「全体の設定」の「参考文献の並び」で「読みで五十音順に並べる」を選びます。Extra 欄は、組版エンジンには CSL の <code>note</code> として渡ります。</p>
+      <ul>
+        <li>読みのない和文の文献は、読みのある文献の後ろに、著者名の文字コード順で並びます。プレビューに警告が出ます。</li>
+        <li>Extra 欄の1行目に別の文字（<code>Citation Key: …</code> など）があると、その文字で並びます。<code>original-date: 1990</code> のような CSL の変数の行は、先にあっても飛ばされます。</li>
+        <li>欧文の文献は、Extra 欄を見ずに著者名で並べます。</li>
+        <li>並び順は、プレビューの下の「参考文献の並び順を見る」で確かめられます。</li>
+      </ul>
+    </details>
+    <details><summary>このアプリについて</summary>
+      <p class="muted small">組版エンジンは citeproc-js 2.4.63（© 2009-2019 Frank Bennett、CPAL 1.0 または AGPL 3.0 の選択）。Zotero が中で使っているのと同じ版のエンジンですが、Zotero 側で手が入っているので、細かい出力が違うことがあります。最後は Zotero に入れて確かめてください。ロケールは CSL プロジェクトの locales-*.xml（日・英・仏・独・伊・西・蘭・葡・羅・露、CC BY-SA 3.0）。ライセンスの全文と、埋め込んだソースは、この HTML ファイルの中にそのまま入っています。作業中の状態はこのブラウザの中にだけ保存され、どこにも送られません。</p>
+    </details>
+    <div class="dlg-actions help-actions"><button type="button" id="btnHelpUpload">CSL ファイルをアップロード</button><button type="button" id="btnHelpStarter" class="primary">アプリの引用スタイルから始める</button><button value="cancel">閉じる</button></div>
   </form>
 </dialog>
 
@@ -28954,6 +28999,8 @@ window.CSL_SAMPLES = [{"id": "s-ja-book-1", "type": "book", "language": "ja", "t
     $('btnExportSplit').addEventListener('click', openSplit);
     $('btnDoSplit').addEventListener('click', doSplit);
     $('btnHelp').addEventListener('click', () => $('dlgHelp').showModal());
+    $('btnHelpUpload').addEventListener('click', () => readFile($('fileCsl'), (text, name) => { if (loadCsl(text, name)) $('dlgHelp').close(); }));
+    $('btnHelpStarter').addEventListener('click', () => { $('dlgHelp').close(); openStarter(); });
     $('btnChangelog').addEventListener('click', () => $('dlgChangelog').showModal());
     $('btnAddItem').addEventListener('click', openItemList);
     $('btnNewItem').addEventListener('click', () => { $('dlgItemList').close(); openItemEditor(null); });
@@ -28970,7 +29017,7 @@ window.CSL_SAMPLES = [{"id": "s-ja-book-1", "type": "book", "language": "ja", "t
     setupCslDrop();
     renderPanels();
     renderPreview();
-    if (!restored) openStarter();
+    if (!restored) $('dlgHelp').showModal(); // 初めて開いたときは、アプリの説明と使い方から
   }
   window.CSLApp = { state, renderPreview, editedTitle, get offView() { return offView; } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

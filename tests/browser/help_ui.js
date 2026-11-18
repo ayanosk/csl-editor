@@ -1,0 +1,32 @@
+// 初めて開いたときの画面：使い方が出て、そこから「アプリの引用スタイルから始める」「CSL ファイルをアップロード」へ進める。
+const { puppeteer, CHROME } = require('./_puppeteer.js');
+const path = require('path');
+const [html, sp] = process.argv.slice(2);
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+(async () => {
+  const b = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
+  const p = await b.newPage(); const errs = [];
+  p.on('pageerror', (e) => errs.push(e.message)); p.on('dialog', async (d) => { errs.push('dialog: ' + d.message()); await d.accept(); });
+  await p.setViewport({ width: 1400, height: 1000 });
+  await p.goto('file://' + html); await wait(500);
+  await p.evaluate(() => localStorage.clear()); await p.reload(); await wait(500);
+  const open = () => p.evaluate(() => ({ help: document.getElementById('dlgHelp').open, starter: document.getElementById('dlgStarter').open }));
+  const check = (label, ok) => { console.log((ok ? 'OK ' : 'NG ') + label); if (!ok) errs.push(label); };
+  let o = await open();
+  check('初めて開くと使い方が出る', o.help && !o.starter);
+  check('見出しがアプリ名', (await p.$eval('#dlgHelp h2', (n) => n.textContent)) === '引用スタイル（CSL）編集アプリ');
+  await p.click('#btnHelpStarter'); await wait(300);
+  o = await open();
+  check('「アプリの引用スタイルから始める」で選ぶ画面へ', !o.help && o.starter);
+  await p.evaluate(() => document.querySelector('#starterList button').click()); await wait(300);
+  await p.click('#btnHelp'); await wait(200);
+  check('「使い方」でまた開く', (await open()).help);
+  const [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnHelpUpload')]);
+  await fc.accept([path.join(sp, 'test_apa.csl')]); await wait(600);
+  o = await open();
+  check('「CSL ファイルをアップロード」で読み込んで閉じる', !o.help && !o.starter && (await p.evaluate(() => CSLApp.state.model.starter)) === 'apa');
+  await p.reload(); await wait(500);
+  check('作業中の状態があれば使い方は出ない', !(await open()).help);
+  console.log('エラー:', errs.length ? errs.join(' / ') : 'なし');
+  await b.close();
+})();

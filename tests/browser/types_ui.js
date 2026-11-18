@@ -1,12 +1,13 @@
 // ヘッドレスの Chrome でアプリを操作する検証。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
 // puppeteer-core は marp-cli に同梱のものを使う（PUPPETEER_CORE で差し替え可）。Chrome は CHROME で差し替え可。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs'); const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const b = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
   const p = await b.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('dialog', (d) => d.accept());
   await p.setViewport({ width: 1400, height: 1100 });
   await p.goto('file://' + html); await wait(600);
+  await toStarter(p);
   await p.evaluate(() => document.querySelector('#starterList button').click()); await wait(400);
   const cards = () => p.evaluate(() => [...document.querySelectorAll('#previewList .item')].filter(n => !n.hidden).map(n => n.dataset.tab + '/' + n.dataset.authors).join(' '));
   const tabs = () => p.evaluate(() => [...document.querySelectorAll('.type-tabs > button')].map(b => b.textContent).join(' | '));
