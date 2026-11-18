@@ -4,6 +4,8 @@
 
 **アプリを開く：https://ayanosk.github.io/csl-editor/**
 
+画面の図つきの使い方：https://ayanosk.github.io/csl-editor/guide/
+
 1枚の HTML で動き、インストールは要りません。ネットにつながっていなくても動くので、[docs/index.html](docs/index.html) をダウンロードして開いても使えます。
 
 *A browser-based editor for building CSL citation styles by arranging field chips, with separate formats for Japanese and Western-language references. The interface is in Japanese.*
@@ -60,6 +62,7 @@ bash tests/browser/run_all.sh     # ヘッドレスの Chrome で画面を操作
 ```
 
 - `src/` がアプリの本体、`vendor/` が同梱物（citeproc-js と CSL のロケール）です。`docs/index.html` は `build.py` で作るもので、GitHub Pages はここを公開します。直したら組み直してコミットしてください。
+- 使い方のページ `docs/guide/index.html` は、そのファイルが正本です（組む手順はありません）。画面の図は `docs/guide/img/` にあり、`node guide/shoot.js` で撮り直せます（先に `python3 build.py`）。
 - 版を上げるときは、[CHANGELOG.md](CHANGELOG.md) のいちばん上に `## [0.2.0] - 2026-12-01` の形で版を足し、追加・変更・修正を書いてから `build.py` で組み直します。フッターの版と公開日、アプリの「更新履歴」は、ここから作られます。
 - 画面の検証には puppeteer-core と Google Chrome が要ります。場所は環境変数 `PUPPETEER_CORE`・`CHROME` で指定でき、無ければ自動で探します。
 
