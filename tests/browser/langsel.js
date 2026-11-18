@@ -13,7 +13,7 @@ const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) =
   const pick = (k, v) => p.evaluate((k, v) => { const s = document.querySelectorAll('#previewFilter select')[k]; s.value = v; s.dispatchEvent(new Event('change')); }, k, v);
   console.log('既定:', await st());
   // fr の書式を足し、仏語の文献を1件入れる
-  await p.click('.add-lang'); await wait(200); await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
+  await p.click('.add-lang'); await wait(200); await p.evaluate(() => document.querySelectorAll('.lang-other').forEach((d) => { d.open = true; })); await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
   await p.click('#btnAddItem'); await wait(200); await p.click('#btnNewItem'); await wait(300);
   await p.evaluate(() => { const set = (lab, v) => { const l = [...document.querySelectorAll('#itemForm label')].find(l => !l.hidden && l.textContent === lab); l.nextElementSibling.value = v; }; set('言語', 'fr'); set('著者', 'Dupont, Jean'); set('書名', 'Histoire'); set('出版者', 'Éditions Exemple'); set('発行年月日', '2020'); });
   await p.evaluate(() => [...document.querySelectorAll('#itemForm button')].find(b => b.textContent === '入れる').click()); await wait(500);

@@ -273,3 +273,43 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
 .off-actions .danger { color: var(--err-ink); }
 .off-edits { list-style: none; padding: 0; margin: 4px 0 8px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
 .off-edits li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* 言語ごとの既定の書式を選ぶ一覧 */
+.preset-list { display: grid; gap: 6px; margin: 4px 0 8px; }
+.preset-pick { text-align: left; padding: 6px 10px; }
+.preset-pick b { display: block; font-size: 13px; }
+.preset-pick .how { font-weight: 400; color: var(--muted); font-size: 12px; }
+.preset-pick .ex { display: block; font-size: 12px; color: var(--muted); unicode-bidi: plaintext; }
+.preset-pick:disabled { opacity: .55; cursor: default; }
+.sub-head { font-size: 13px; margin: 12px 0 4px; }
+.lang-other summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+
+/* 書誌の一覧：チェック（プレビューに出すか）と題名のボタン */
+.item-row { display: flex; align-items: center; gap: 6px; }
+.item-row > input { flex: none; margin: 0; }
+.item-row .item-pick { flex: 1; }
+.item-row.is-hidden .item-pick { color: var(--muted); text-decoration: line-through; }
+.lang-sample-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.lang-sample.on { background: var(--accent-weak); border-color: var(--accent); }
+
+/* 取り込みの確認 */
+.import-mode { display: block; margin: 4px 0; }
+.import-langs { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+
+/* 縦書き：カードの中の組み上がりだけを縦に組む（右から左へ行が進む） */
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; }
+.seg button:first-child { border-radius: 4px 0 0 4px; }
+.seg button:last-child { border-radius: 0 4px 4px 0; margin-left: -1px; }
+.seg button[aria-pressed="true"] { background: var(--accent-weak); border-color: var(--accent); }
+.tate-mode {
+  writing-mode: vertical-rl; text-orientation: mixed;
+  height: min(calc(100vh - 220px), 680px); min-height: 360px;
+  width: 100%; box-sizing: border-box; overflow-x: auto; overflow-y: hidden;
+}
+/* カードは右から左へ並ぶ。間（物理の左）を空ける */
+.tate-mode .item { margin: 0 0 0 8px; }
+.tate-mode .out { grid-template-columns: 7em 1fr; }
+.tate-mode .out .v { font-family: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif; line-height: 1.8; }
+.tate-mode .hidden-items, .tate-mode .bib-order { margin: 0 0 0 8px; }
+.tate-mode .tcy { text-combine-upright: all; }

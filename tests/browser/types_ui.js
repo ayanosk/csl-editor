@@ -29,7 +29,7 @@ const fs = require('fs'); const [html, sp] = process.argv.slice(2); const wait =
   await p.click('#btnAddItem'); await wait(200); await p.click('#btnNewItem'); await wait(300);
   await p.evaluate(() => { const s = document.querySelector('#itemForm select'); console.log(s.options.length); s.value = 'thesis'; s.dispatchEvent(new Event('change')); });
   console.log('入力画面の種類の数:', await p.evaluate(() => document.querySelector('#itemForm select').options.length));
-  await p.evaluate(() => { const set = (lab, v) => { const l = [...document.querySelectorAll('#itemForm label')].find(l => !l.hidden && l.textContent === lab); l.nextElementSibling.value = v; }; set('言語', 'ja'); set('著者', '山田, 花子'); set('題名', '近世越後の村落'); set('大学名', '越後大学'); set('発行年月日', '2020'); });
+  await p.evaluate(() => { const set = (lab, v) => { const l = [...document.querySelectorAll('#itemForm label')].find(l => !l.hidden && l.textContent === lab); l.nextElementSibling.value = v; }; set('言語', 'ja'); set('著者', '山本, 花子'); set('題名', '近世越後の村落'); set('大学名', '越後大学'); set('発行年月日', '2020'); });
   await p.evaluate(() => [...document.querySelectorAll('#itemForm button')].find(b => b.textContent === '入れる').click()); await wait(500);
   console.log('並び:', await cards());
   console.log('学位論文:', await p.evaluate(() => [...document.querySelectorAll('#previewList .item')].find(n => n.dataset.tab === 'x-thesis').querySelector('.v').textContent));

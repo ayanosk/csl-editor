@@ -15,7 +15,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await p.evaluate(() => localStorage.clear()); await p.reload(); await wait(500);
   await toStarter(p);
   await p.evaluate(() => document.querySelectorAll('#starterList button')[0].click()); await wait(300);
-  await p.click('.add-lang'); await wait(200); await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
+  await p.click('.add-lang'); await wait(200); await p.evaluate(() => document.querySelectorAll('.lang-other').forEach((d) => { d.open = true; })); await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
   console.log('ボタン:', await p.evaluate(() => [document.getElementById('btnExport').textContent, document.getElementById('btnExportSplit').textContent].join(' / ')));
   // 3つとも選んで zip
   await p.click('#btnExportSplit'); await wait(300);

@@ -39,6 +39,8 @@
       <span class="spacer"></span>
       <span id="previewFilter" class="filter"></span>
       <button id="btnResetItems" type="button" class="small-btn" hidden>見本に戻す</button>
+      <span class="seg" id="writingMode" role="group" aria-label="組み方"><button type="button" data-m="h" class="small-btn">横書き</button><button type="button" data-m="v" class="small-btn">縦書き</button></span>
+      <label id="tcyWrap" class="small" hidden title="Word で2桁の数字を縦中横にしたときの見え方を確かめます。縦中横は CSL では指定できないので、スタイルには入りません。Word の側で設定してください"><input type="checkbox" id="tateTcy"> 縦中横で見る（2桁の数字・Word で縦中横にした場合）</label>
       <button id="btnAddItem" type="button" class="small-btn">見本の書誌を編集する</button>
     </div>
     <div id="previewError" class="error" hidden></div>
@@ -83,9 +85,12 @@
       <li>下の「ファイルを選ぶ」で、保存したファイル（.json）を選びます。</li>
     </ol>
     <p class="import-row"><button type="button" id="btnPickItems" class="primary">ファイルを選ぶ</button>
-      <span class="muted small">いまの文献と入れ替わります。ファイルはこのブラウザの中で読むだけで、どこにも送られません。</span></p>
+      <span class="muted small">選んだあと、いまの文献と置き換えるか、足すかを選べます。ファイルはこのブラウザの中で読むだけで、どこにも送られません。</span></p>
+    <h3 class="dlg-sec">言語ごとの見本を足す</h3>
+    <p class="hint">押した言語の見本（図書・本の章・雑誌論文・ウェブページの4件）が、いまの文献に加わります。もう一度押すと外れます。架空の文献です。その言語の書式を足すと、その形で組まれます。</p>
+    <div id="langSampleBtns" class="lang-sample-btns"></div>
     <h3 class="dlg-sec">文献を選んで直す</h3>
-    <p class="hint">自分の分野の書誌に近づけると、プレビューでそのまま確かめられます。直した内容はこのブラウザの中にだけ保存され、Zotero のデータは変わりません。</p>
+    <p class="hint">チェックを外した文献は、プレビューに出しません（データは残ります）。題名を押すと直せます。直した内容はこのブラウザの中にだけ保存され、Zotero のデータは変わりません。</p>
     <div id="itemList" class="item-list"></div>
     <div class="dlg-actions"><button type="button" id="btnNewItem">＋ 新しく入れる</button><span class="spacer"></span><button value="cancel">閉じる</button></div>
   </form>
@@ -99,6 +104,10 @@
     <p id="splitFiles" class="hint"></p>
     <div class="dlg-actions"><button value="cancel">やめる</button><button type="button" id="btnDoSplit" class="primary">書き出す</button></div>
   </form>
+</dialog>
+
+<dialog id="dlgImport">
+  <form method="dialog" id="importForm"></form>
 </dialog>
 
 <dialog id="dlgItem">
@@ -170,13 +179,20 @@
     <details><summary>和文と欧文</summary>
       <p>どちらの書式で組むかは、Zotero の「言語」欄で決まります。<code>ja</code> なら和文、<code>en</code> <code>fr</code> <code>de</code> などなら欧文です。欄が空の文献は和文の書式で組みます。プレビューに警告が出たら、Zotero で言語欄を直してください。</p>
       <p>多言語版は、Zotero（Word・Google ドキュメントのプラグイン）でも、LaTeX の citation-style-language パッケージ（citeproc-lua）でも、言語欄に従って書き分けます。pandoc は言語による書き分けを読めないので、「言語別に書き出す」で作ったスタイルを使います。</p>
-      <p>英語は「欧文の書式」が既定です。フランス語の文献は « » や「et」で組みたい、など言語ごとに変えたいときは、「＋ 言語ごとの書式」から言語コード（<code>fr</code> <code>de</code> など）を入れて足します。その言語の文献だけが、足した書式で組まれます。</p>
+      <p>英語は「欧文の書式」が既定です。言語ごとに変えたいときは、「＋ 言語ごとの書式」で言語を選んで足します。中国語（大陸式・台湾式）・韓国語・ロシア語・フランス語・ドイツ語・アラビア語・イタリア語・スペイン語・トルコ語は、その言語の人文学の論文で一般的な書き方が既定になります。一覧にない言語は、言語コード（<code>pl</code> など）を入れて足せます（欧文の書式を写します）。その言語の文献だけが、足した書式で組まれます。</p>
     </details>
     <details><summary>2回目以降の注</summary>
-      <p>注形式では、「注（2回目以降）」と「注（直前と同じ文書）」の並びを別に作れます。間に別の注を挟んで同じ文書を引くと短縮形（山田『デジタル史料学入門』50頁）、直前の注と同じ文書なら「同上」（頁も同じなら「同上。」、頁が違えば「同上、45頁。」）になります。短縮形の題名には Zotero の「短いタイトル」欄が使われます。書き分けは「全体の設定」で切れます。</p>
+      <p>注形式では、「注（2回目以降）」と「注（直前と同じ文書）」の並びを別に作れます。間に別の注を挟んで同じ文書を引くと短縮形（山本『デジタル史料学入門』50頁）、直前の注と同じ文書なら「同上」（頁も同じなら「同上。」、頁が違えば「同上、45頁。」）になります。短縮形の題名には Zotero の「短いタイトル」欄が使われます。書き分けは「全体の設定」で切れます。</p>
+    </details>
+    <details><summary>縦書きで使う（数字を漢数字にする）</summary>
+      <p>プレビューの上の「横書き／縦書き」で、組み上がりを縦書きで見られます。操作は横書きと同じです。「縦中横で見る」は、Word で2桁の数字を縦中横にしたときの見え方を確かめるためのものです。縦中横は CSL では指定できない（斜体・太字・下線などしか持てない）ので、スタイルには入りません。Word の側で設定してください。</p>
+      <p>「和文の書式」の「和文の書式全体」で「数字」を漢数字にすると、巻・号・頁・版・引用箇所が「四二頁」「二三〇頁」（〇を使う）か「四十二頁」「二百三十頁」（十百千を使う）になります。Zotero のデータは算用数字のままでかまいません。</p>
+      <p>発行年は漢数字にできません。Zotero（の組版エンジン）が、年を漢数字で組む機能を持たないためです。4桁かどうかや、元号かどうかとは関係ありません。年は、提出前に文書の側で直してください。</p>
+      <p>和暦で出したいときは、Zotero の日付欄に「平成八」のように「年」を付けずに入れてください。Zotero は和暦を年として読めないので、入れた文字のまま渡し、書式が「年」を付けて「平成八年」になります。「平成八年」と入れると「平成八年年」と重なります（プレビューに警告が出ます）。和暦で入れた文献は、年の順の並べ替えと、著者年形式の 2024a・2024b の書き分けには使われません。</p>
+      <p>CSL の仕様にない用語の使い方で実現しているので、Zotero（Word・Google ドキュメントのプラグイン）では効きますが、pandoc などほかのソフトでは算用数字に戻ります。3000 を超える数字も算用数字のままです。</p>
     </details>
     <details><summary>五十音順に並べる</summary>
-      <p>Zotero には読みの欄がないので、「その他（Extra）」欄で代用します。和文の文献の Extra 欄の1行目に、著者の読みをひらがなで入れ（例：<code>やまだ はなこ</code>）、「全体の設定」の「参考文献の並び」で「読みで五十音順に並べる」を選びます。Extra 欄は、組版エンジンには CSL の <code>note</code> として渡ります。</p>
+      <p>Zotero には読みの欄がないので、「その他（Extra）」欄で代用します。和文の文献の Extra 欄の1行目に、著者の読みをひらがなで入れ（例：<code>やまもと はなこ</code>）、「全体の設定」の「参考文献の並び」で「読みで五十音順に並べる」を選びます。Extra 欄は、組版エンジンには CSL の <code>note</code> として渡ります。</p>
       <ul>
         <li>読みのない和文の文献は、読みのある文献の後ろに、著者名の文字コード順で並びます。プレビューに警告が出ます。</li>
         <li>Extra 欄の1行目に別の文字（<code>Citation Key: …</code> など）があると、その文字で並びます。<code>original-date: 1990</code> のような CSL の変数の行は、先にあっても飛ばされます。</li>
@@ -185,7 +201,7 @@
       </ul>
     </details>
     <details><summary>このアプリについて</summary>
-      <p class="muted small">組版エンジンは citeproc-js 2.4.63（© 2009-2019 Frank Bennett、CPAL 1.0 または AGPL 3.0 の選択）。Zotero が中で使っているのと同じ版のエンジンですが、Zotero 側で手が入っているので、細かい出力が違うことがあります。最後は Zotero に入れて確かめてください。ロケールは CSL プロジェクトの locales-*.xml（日・英・仏・独・伊・西・蘭・葡・羅・露、CC BY-SA 3.0）。ライセンスの全文と、埋め込んだソースは、この HTML ファイルの中にそのまま入っています。作業中の状態はこのブラウザの中にだけ保存され、どこにも送られません。</p>
+      <p class="muted small">組版エンジンは citeproc-js 2.4.63（© 2009-2019 Frank Bennett、CPAL 1.0 または AGPL 3.0 の選択）。Zotero が中で使っているのと同じ版のエンジンですが、Zotero 側で手が入っているので、細かい出力が違うことがあります。最後は Zotero に入れて確かめてください。ロケールは CSL プロジェクトの locales-*.xml（日・英・仏・独・伊・西・蘭・葡・羅・露・中〔簡体・繁体〕・韓・亜〔アラビア語〕・土〔トルコ語〕、CC BY-SA 3.0）。ライセンスの全文と、埋め込んだソースは、この HTML ファイルの中にそのまま入っています。作業中の状態はこのブラウザの中にだけ保存され、どこにも送られません。</p>
     </details>
     <div class="dlg-actions help-actions"><button type="button" id="btnHelpUpload">CSL ファイルをアップロード</button><button type="button" id="btnHelpStarter" class="primary">アプリの引用スタイルから始める</button><button value="cancel">閉じる</button></div>
   </form>

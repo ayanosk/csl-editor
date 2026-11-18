@@ -26,4 +26,10 @@ if (!CHROME || !fs.existsSync(CHROME)) {
 async function toStarter(p) {
   await p.evaluate(() => { const d = document.getElementById('dlgHelp'); if (d && d.open) document.getElementById('btnHelpStarter').click(); });
 }
-module.exports = { puppeteer: findPuppeteer(), CHROME, toStarter };
+// 文献のファイルを選ぶと取り込みの確認が出る。開いていれば、そのまま（置き換える・全言語）取り込む。
+async function confirmImport(p) {
+  await new Promise((r) => setTimeout(r, 300));
+  await p.evaluate(() => { const d = document.getElementById('dlgImport'); if (d && d.open) document.getElementById('btnDoImport').click(); });
+  await new Promise((r) => setTimeout(r, 300));
+}
+module.exports = { puppeteer: findPuppeteer(), CHROME, toStarter, confirmImport };

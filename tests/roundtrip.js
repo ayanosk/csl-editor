@@ -29,6 +29,6 @@ m.systems.ja.bib.book[2].suffix = '">';
 const r = render(m);
 const book = r.bib.find(([id]) => id === 's-ja-book-1')[1];
 // 対になった直線の引用符 "q" は、citeproc-js が組版用の “q” に替える（エンジンの決まった動き）。
-assert.strictEqual(book, 'A&B <x> “q” & <山田花子">『デジタル史料学入門』越後書房、2024年。', book);
+assert.strictEqual(book, 'A&B <x> “q” & <山本花子">『デジタル史料学入門』越後書房、2024年。', book);
 n++;
 console.log(`OK ${n}件`);

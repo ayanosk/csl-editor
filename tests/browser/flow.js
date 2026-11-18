@@ -1,6 +1,6 @@
 // ヘッドレスの Chrome でアプリを操作する検証。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
 // puppeteer-core は marp-cli に同梱のものを使う（PUPPETEER_CORE で差し替え可）。Chrome は CHROME で差し替え可。
-const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter, confirmImport } = require('./_puppeteer.js');
 const SP = process.argv[3];
 const FIX = __dirname;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -22,7 +22,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // 1) CSL JSON を読み込む
   await p.click('#btnAddItem'); await wait(200);
   let [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnPickItems')]);
-  await fc.accept([FIX + '/zotero_export.json']);
+  await fc.accept([FIX + '/zotero_export.json']); await confirmImport(p);
   await wait(600);
   const cards = await p.evaluate(() => [...document.querySelectorAll('#previewList .item')].map((n) => [n.querySelector('.meta').textContent, n.querySelector('.v').textContent, (n.querySelector('.warn') || {}).textContent || '']));
   console.log('読み込み後:', document = null || '', '\n' + cards.map((c) => '  ' + c.join(' | ')).join('\n'));
