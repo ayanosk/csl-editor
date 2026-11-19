@@ -22,4 +22,14 @@ if (!CHROME || !fs.existsSync(CHROME)) {
   console.error('Google Chrome が見つかりません。CHROME で実行ファイルの場所を指定してください。');
   process.exit(2);
 }
-module.exports = { puppeteer: findPuppeteer(), CHROME };
+// 初めて開いたときは使い方の画面が出る。開いていれば「アプリの引用スタイルから始める」を押して、引用スタイルを選ぶ画面へ進む。
+async function toStarter(p) {
+  await p.evaluate(() => { const d = document.getElementById('dlgHelp'); if (d && d.open) document.getElementById('btnHelpStarter').click(); });
+}
+// 文献のファイルを選ぶと取り込みの確認が出る。開いていれば、そのまま（置き換える・全言語）取り込む。
+async function confirmImport(p) {
+  await new Promise((r) => setTimeout(r, 300));
+  await p.evaluate(() => { const d = document.getElementById('dlgImport'); if (d && d.open) document.getElementById('btnDoImport').click(); });
+  await new Promise((r) => setTimeout(r, 300));
+}
+module.exports = { puppeteer: findPuppeteer(), CHROME, toStarter, confirmImport };

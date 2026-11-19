@@ -1,5 +1,5 @@
 // 公式のスタイルの手直し：読み込む → 押して選ぶ → 直す・出さない・入れ替える → 元に戻す → 書き出す → 再読み込み → 型に戻る
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs'), path = require('path');
 const [html, sp] = process.argv.slice(2);
 const FIX = path.join(__dirname, '..', 'fixtures', 'chicago-notes-bibliography.csl');
@@ -21,6 +21,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const clickSeg = (id, row, s) => p.evaluate((id, row, s) => { const seg = [...document.querySelectorAll(`.item[data-id="${id}"] [data-row="${row}"] .cslseg`)].find((x) => x.textContent.includes(s)); seg.click(); return !!seg; }, id, row, s);
   const btn = (t) => p.evaluate((t) => [...document.querySelectorAll('#panelBody button')].find((x) => x.textContent.includes(t)).click(), t);
   // 1) 読み込む
+  await toStarter(p);
   const [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnDlgLoadCsl')]);
   await fc.accept([FIX]); await wait(300); await idle();
   check('読み込むと手直しの画面になる', await p.evaluate(() => CSLApp.state.mode === 'official' && !document.getElementById('dlgStarter').open));
@@ -66,6 +67,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // 書き出したものを読み込み直す（名前と ID を保つ）
   const id1 = (xml.match(/<id>([^<]*)<\/id>/) || [])[1];
   await p.click('#btnStarter'); await wait(200);
+  await toStarter(p);
   const [fc2] = await Promise.all([p.waitForFileChooser(), p.click('#btnDlgLoadCsl')]);
   await fc2.accept([path.join(dl, f)]); await wait(300); await idle();
   check('書き出したものを読み込み直すと、名前と ID を保つ', (await p.evaluate(() => [CSLApp.state.official.title, CSLApp.state.official.id])).join() === ['chicago-notes-bibliography_edited', id1].join());
@@ -73,6 +75,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await p.screenshot({ path: path.join(sp, 'official.png') });
   // 8) 型から組む道に戻る
   await p.click('#btnStarter'); await wait(200);
+  await toStarter(p);
   await p.evaluate(() => document.querySelectorAll('#starterList button')[0].click()); await wait(500);
   check('型を選ぶと、型から組む画面に戻る', await p.evaluate(() => CSLApp.state.mode === 'chips' && !document.getElementById('btnExportSplit').hidden && document.querySelectorAll('#chipRow .chip').length > 0));
   console.log('エラー:', errs.length ? errs.join('\n') : 'なし'); await b.close();

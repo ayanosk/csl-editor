@@ -186,6 +186,8 @@ table.terms input { width: 100%; }
 /* 注の見本の行は、名前の下に引いた箇所（42頁など）を添える */
 .out .k .at { display: block; white-space: nowrap; }
 .out .v { overflow-wrap: anywhere; }
+/* 参考文献のぶら下げ（全体の設定 → 参考文献の字下げ） */
+.out .v.hanging, .bib-order.hanging li { padding-inline-start: 2em; text-indent: -2em; }
 .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 5px; padding: 3px 8px; font-size: 12px; margin-top: 4px; }
 .error { background: var(--err-bg); color: var(--err-ink); border-radius: 6px; padding: 6px 10px; font-size: 12px; white-space: pre-wrap; }
 
@@ -200,7 +202,12 @@ dialog h2 { font-size: 17px; margin: 0 0 8px; }
 .starter-list .how { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 10px; }
 .starter-list .ex { display: grid; grid-template-columns: 2.6em 1fr; gap: 6px; font-size: 12px; margin-top: 3px; }
 .starter-list .ex-k { color: var(--muted); }
-.help-steps li { margin-bottom: 6px; }
+.help-steps > li { margin-bottom: 10px; }
+.help-steps details, #dlgHelp form > details { margin: 4px 0 0 0; }
+.help-steps details p, #dlgHelp form > details p, #dlgHelp form > details ul { margin: 4px 0 6px 1.1em; font-size: 13px; }
+#dlgHelp summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+.help-actions { gap: 8px; }
+.help-note { margin: 2px 0; font-size: 13px; color: var(--muted); }
 .toast {
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--panel);
   padding: 8px 16px; border-radius: 6px; font-size: 13px; z-index: 20;
@@ -272,3 +279,43 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
 /* 項目の内容をコピーする（書く場所の切り替えの下） */
 .copy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; font-size: 13px; }
 .copy-row .lbl { color: var(--muted, #666); margin-right: 4px; }
+
+/* 言語ごとの既定の書式を選ぶ一覧 */
+.preset-list { display: grid; gap: 6px; margin: 4px 0 8px; }
+.preset-pick { text-align: left; padding: 6px 10px; }
+.preset-pick b { display: block; font-size: 13px; }
+.preset-pick .how { font-weight: 400; color: var(--muted); font-size: 12px; }
+.preset-pick .ex { display: block; font-size: 12px; color: var(--muted); unicode-bidi: plaintext; }
+.preset-pick:disabled { opacity: .55; cursor: default; }
+.sub-head { font-size: 13px; margin: 12px 0 4px; }
+.lang-other summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+
+/* 書誌の一覧：チェック（プレビューに出すか）と題名のボタン */
+.item-row { display: flex; align-items: center; gap: 6px; }
+.item-row > input { flex: none; margin: 0; }
+.item-row .item-pick { flex: 1; }
+.item-row.is-hidden .item-pick { color: var(--muted); text-decoration: line-through; }
+.lang-sample-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.lang-sample.on { background: var(--accent-weak); border-color: var(--accent); }
+
+/* 取り込みの確認 */
+.import-mode { display: block; margin: 4px 0; }
+.import-langs { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+
+/* 縦書き：カードの中の組み上がりだけを縦に組む（右から左へ行が進む） */
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; }
+.seg button:first-child { border-radius: 4px 0 0 4px; }
+.seg button:last-child { border-radius: 0 4px 4px 0; margin-left: -1px; }
+.seg button[aria-pressed="true"] { background: var(--accent-weak); border-color: var(--accent); }
+.tate-mode {
+  writing-mode: vertical-rl; text-orientation: mixed;
+  height: min(calc(100vh - 220px), 680px); min-height: 360px;
+  width: 100%; box-sizing: border-box; overflow-x: auto; overflow-y: hidden;
+}
+/* カードは右から左へ並ぶ。間（物理の左）を空ける */
+.tate-mode .item { margin: 0 0 0 8px; }
+.tate-mode .out { grid-template-columns: 7em 1fr; }
+.tate-mode .out .v { font-family: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif; line-height: 1.8; }
+.tate-mode .hidden-items, .tate-mode .bib-order { margin: 0 0 0 8px; }
+.tate-mode .tcy { text-combine-upright: all; }

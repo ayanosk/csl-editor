@@ -4,6 +4,8 @@
 
 **アプリを開く：https://ayanosk.github.io/csl-editor/**
 
+画面の図つきの使い方：https://ayanosk.github.io/csl-editor/guide/
+
 1枚の HTML で動き、インストールは要りません。ネットにつながっていなくても動くので、[docs/index.html](docs/index.html) をダウンロードして開いても使えます。
 
 *A browser-based editor for building CSL citation styles by arranging field chips, with separate formats for Japanese and Western-language references. The interface is in Japanese.*
@@ -14,8 +16,9 @@
   - **微調整**：プレビューの出力で直したい箇所を押して、前後の文字・区切り・斜体などを直したり、出さないようにしたり、並びを入れ替えたりできます。手を入れていない部分は元のまま残り、直すと影響する範囲（参考文献と注の両方など）も示します。
   - **大幅修正**：元のスタイルを部品（チップ）に移し、型から組むときと同じように、資料の種類ごとに部品を足したり並べ替えたりできます。和文の書式も入るので、多言語版にできます。元のスタイルと出力が違う見本は一覧で示します。元のスタイルの作者・ライセンスの表示は保ち、元のスタイルを template として記録します。
 - Chicago 風・APA 風・MLA 風・IEEE 風の4つの型から始めて、図書・本の章・雑誌論文・ウェブページなどの資料の種類ごとに、参考文献と注（または本文中の引用）の並びを作れます。
-- 和文と欧文（とフランス語など足した言語）で、別々の書き方を持てます。どちらで組むかは、Zotero の「言語」欄で決まります。Zotero（Word・Google ドキュメントのプラグイン）でも、LaTeX の citation-style-language（citeproc-lua）でも、この書き分けが効きます。
-- Zotero から書き出した書誌（CSL JSON）を読み込むと、自分の文献でプレビューできます。読み込まなければ見本の書誌で試せます。
+- 和文と欧文（と足した言語）で、別々の書き方を持てます。中国語（大陸式・台湾式）・韓国語・ロシア語・フランス語・ドイツ語・アラビア語・イタリア語・スペイン語・トルコ語は、その言語の人文学の論文で一般的な書き方を既定として選んで足せます。どちらで組むかは、Zotero の「言語」欄で決まります。Zotero（Word・Google ドキュメントのプラグイン）でも、LaTeX の citation-style-language（citeproc-lua）でも、この書き分けが効きます。
+- Zotero から書き出した書誌（CSL JSON）を読み込むと、自分の文献でプレビューできます。いまの文献と置き換えるか足すか、どの言語の文献を入れるかを選べます。読み込まなければ見本の書誌で試せ、中国語・韓国語・ロシア語などの見本も言語ごとに足せます。
+- 縦書き向けに、巻・号・頁・引用箇所を漢数字にできます（発行年は CSL の仕組み上できません）。プレビューを縦書きに切り替えて見られます。
 - 2回目以降の注（同上、前掲書、短縮形）を書き分けられます。
 - 和文の文献を、Zotero の「その他（Extra）」欄の1行目に入れた読みで、五十音順に並べられます。
 
@@ -57,10 +60,12 @@ node tests/official.js            # 公式のスタイルの手直し（書き�
 node tests/convert.js             # 公式のスタイルを部品に移す（大幅修正）：組み直した出力が元と同じか
 node tests/reading_sort.js        # 読みで五十音順に並べる（Extra 欄の1行目。欧文は著者名）
 node tests/archive.js             # 一次史料の部品：原稿・文書・手紙のタブを足したときの並び
+node tests/volumes.js             # 総巻数の部品（全5巻・5 vols.）と、用語「巻（複数）」の補い
 bash tests/browser/run_all.sh     # ヘッドレスの Chrome で画面を操作する検証
 ```
 
 - `src/` がアプリの本体、`vendor/` が同梱物（citeproc-js と CSL のロケール）です。`docs/index.html` は `build.py` で作るもので、GitHub Pages はここを公開します。直したら組み直してコミットしてください。
+- 使い方のページ `docs/guide/index.html` は、そのファイルが正本です（組む手順はありません）。画面の図は `docs/guide/img/` にあり、`node guide/shoot.js` で撮り直せます（先に `python3 build.py`）。
 - 版を上げるときは、[CHANGELOG.md](CHANGELOG.md) のいちばん上に `## [0.2.0] - 2026-12-01` の形で版を足し、追加・変更・修正を書いてから `build.py` で組み直します。フッターの版と公開日、アプリの「更新履歴」は、ここから作られます。
 - 画面の検証には puppeteer-core と Google Chrome が要ります。場所は環境変数 `PUPPETEER_CORE`・`CHROME` で指定でき、無ければ自動で探します。
 

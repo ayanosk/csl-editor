@@ -1,9 +1,9 @@
 // 似ている型（Chicago・APA・MLA・IEEE の4つ）。欧文の系統はそれぞれの典型的な形にし、
 // 和文の系統はそれぞれの示し方（注・著者年・著者頁・番号）を日本語の書き方に移したもの。
-//   chicago  注で示す        和文＝山田花子『書名』越後書房、2024年。
-//   apa      著者と年で示す  和文＝山田花子（2024）『書名』越後書房。（山田, 2024, 42頁）
-//   mla      著者と頁で示す  和文＝注と同じ形の参考文献。（山田 42頁）
-//   ieee     番号で示す      和文＝[1] 山田花子『書名』越後書房、2024年。[1, 42頁]
+//   chicago  注で示す        和文＝山本花子『書名』越後書房、2024年。
+//   apa      著者と年で示す  和文＝山本花子（2024）『書名』越後書房。（山本, 2024, 42頁）
+//   mla      著者と頁で示す  和文＝注と同じ形の参考文献。（山本 42頁）
+//   ieee     番号で示す      和文＝[1] 山本花子『書名』越後書房、2024年。[1, 42頁]
 (function (root) {
   'use strict';
 
@@ -16,13 +16,13 @@
   const EN_NAMES = { delimiter: ', ', and: 'text', precedesLast: 'contextual', precedesLastInverted: 'always', precedesEtAl: 'never', etAlMin: 11, etAlUseFirst: 7, initialize: false, initializeWith: '. ', sortSeparator: ', ', roleAfterPrefix: ', ', roleBeforeSuffix: ' ', substituteRole: 'after' };
 
   const TERMS_JA = {
-    page: '頁', pages: '頁', volume: '巻', issue: '号', edition: '版',
+    page: '頁', pages: '頁', volume: '巻', volumes: '巻', issue: '号', edition: '版',
     editor: '編', editors: '編', 'editor-verb': '編', translator: '訳', translators: '訳', 'translator-verb': '訳',
     'et-al': 'ほか', and: '・', accessed: '参照', 'page-range-delimiter': '-',
     recipient: '宛', 'recipient-verb': '宛', number: '号',
   };
   const TERMS_EN = {
-    page: 'p.', pages: 'pp.', volume: 'vol.', issue: 'no.', edition: 'ed.',
+    page: 'p.', pages: 'pp.', volume: 'vol.', volumes: 'vols.', issue: 'no.', edition: 'ed.',
     editor: 'ed.', editors: 'eds.', 'editor-verb': 'edited by', translator: 'trans.', translators: 'trans.', 'translator-verb': 'translated by',
     'et-al': 'et al.', and: 'and', accessed: 'accessed', 'page-range-delimiter': '–',
     recipient: 'to', 'recipient-verb': 'to', number: 'no.',
@@ -132,7 +132,7 @@
       name: 'Chicago 風', // 画面に出す名前。公式のスタイルではないので「風」を付ける
       how: '注で示す（歴史学・人文学）',
       en: 'Léa Dubois and Jules Moreau, Numbers in the Archive, trans. Anna Hughes (Example University Press, 2019), 42.',
-      ja: '山田花子『デジタル史料学入門』越後書房、2024年、42頁。',
+      ja: '山本花子『デジタル史料学入門』越後書房、2024年、42頁。',
       build: () => ({
         kind: 'note',
         citeLayout: { delimiter: '；' },
@@ -147,7 +147,7 @@
       name: 'APA 風', // 画面に出す名前。公式のスタイルではないので「風」を付ける
       how: '著者名と出版年で示す（心理学・社会科学・教育学）',
       en: '（Dubois & Moreau, 2019, p. 42）　Dubois, L., & Moreau, J. (2019). Numbers in the Archive (A. Hughes, Trans.). Example University Press.',
-      ja: '（山田, 2024, 42頁）　山田花子（2024）『デジタル史料学入門』越後書房。',
+      ja: '（山本, 2024, 42頁）　山本花子（2024）『デジタル史料学入門』越後書房。',
       build: () => ({
         kind: 'author-date',
         citeLayout: { prefix: '（', suffix: '）', delimiter: '；' },
@@ -162,7 +162,7 @@
       name: 'MLA 風', // 画面に出す名前。公式のスタイルではないので「風」を付ける
       how: '著者名と頁で示す（文学・語学）',
       en: '（Dubois and Moreau 42）　Dubois, Léa, and Jules Moreau. Numbers in the Archive. Translated by Anna Hughes, Example University Press, 2019.',
-      ja: '（山田 42頁）　山田花子『デジタル史料学入門』越後書房、2024年。',
+      ja: '（山本 42頁）　山本花子『デジタル史料学入門』越後書房、2024年。',
       build: () => ({
         kind: 'author',
         citeLayout: { prefix: '（', suffix: '）', delimiter: '；' },
@@ -177,7 +177,7 @@
       name: 'IEEE 風', // 画面に出す名前。公式のスタイルではないので「風」を付ける
       how: '角括弧の番号で示す（電気・電子・情報工学）',
       en: '[1, p. 42]　[1] L. Dubois and J. Moreau, Numbers in the Archive. London: Example University Press, 2019.',
-      ja: '[1, 42頁]　[1] 山田花子『デジタル史料学入門』越後書房、2024年。',
+      ja: '[1, 42頁]　[1] 山本花子『デジタル史料学入門』越後書房、2024年。',
       build: () => ({
         kind: 'numeric',
         citeLayout: { prefix: '[', suffix: ']', delimiter: '; ' },
@@ -200,6 +200,8 @@
     m.extraLangs = [];
     if (m.kind === 'note') { m.subsequent = true; ensureSubsequent(m); }
     m.sortByLanguage = m.kind !== 'numeric';
+    // 番号形式でない型は、参考文献をぶら下げで組む（Chicago・APA・MLA の決まり）
+    if (m.kind !== 'numeric') m.bibAttrs = { 'hanging-indent': 'true' };
     m.terms = { ja: { ...TERMS_JA }, en: { ...TERMS_EN } };
     if (key === 'apa') Object.assign(m.terms.en, { translator: 'Trans.', translators: 'Trans.', editor: 'Ed.', editors: 'Eds.' });
     if (key === 'ieee') Object.assign(m.terms.en, { editor: 'Ed.', editors: 'Eds.' });
@@ -251,32 +253,289 @@
   const LANG_NAMES = {
     fr: 'フランス語', de: 'ドイツ語', it: 'イタリア語', es: 'スペイン語', nl: 'オランダ語', pt: 'ポルトガル語',
     la: 'ラテン語', ru: 'ロシア語', pl: 'ポーランド語', cs: 'チェコ語', sv: 'スウェーデン語', da: 'デンマーク語',
-    el: 'ギリシア語', zh: '中国語', ko: '韓国語',
+    el: 'ギリシア語', zh: '中国語', ko: '韓国語', ar: 'アラビア語', tr: 'トルコ語', fa: 'ペルシア語', he: 'ヘブライ語',
+    vi: 'ベトナム語', uk: 'ウクライナ語',
   };
   // このアプリに入れたロケール（プレビューの月名など）。ここに無い言語は英語のロケールで代わりに組む。
-  const BUNDLED_LOCALES = ['ja', 'en', 'fr', 'de', 'it', 'es', 'nl', 'pt', 'la', 'ru'];
+  const BUNDLED_LOCALES = ['ja', 'en', 'fr', 'de', 'it', 'es', 'nl', 'pt', 'la', 'ru', 'zh', 'ko', 'ar', 'tr'];
   // 用語の初期値。ここに無い言語は英語の用語を写す。どれも足場で、学生が用語表で直す前提。
   const LANG_TERMS = {
-    fr: { page: 'p.', pages: 'p.', volume: 'vol.', issue: 'n°', edition: 'éd.', editor: 'éd.', editors: 'éd.', 'editor-verb': 'sous la direction de', translator: 'trad.', translators: 'trad.', 'translator-verb': 'traduit par', 'et-al': 'et al.', and: 'et', accessed: 'consulté le', 'page-range-delimiter': '-', recipient: 'à', 'recipient-verb': 'à', number: 'n°' },
-    de: { page: 'S.', pages: 'S.', volume: 'Bd.', issue: 'H.', edition: 'Aufl.', editor: 'Hrsg.', editors: 'Hrsg.', 'editor-verb': 'herausgegeben von', translator: 'Übers.', translators: 'Übers.', 'translator-verb': 'übersetzt von', 'et-al': 'u. a.', and: 'und', accessed: 'zugegriffen am', 'page-range-delimiter': '–', recipient: 'an', 'recipient-verb': 'an', number: 'Nr.' },
-    it: { page: 'p.', pages: 'pp.', volume: 'vol.', issue: 'n.', edition: 'ed.', editor: 'a cura di', editors: 'a cura di', 'editor-verb': 'a cura di', translator: 'trad.', translators: 'trad.', 'translator-verb': 'tradotto da', 'et-al': 'et al.', and: 'e', accessed: 'consultato il', 'page-range-delimiter': '-', recipient: 'a', 'recipient-verb': 'a', number: 'n.' },
-    es: { page: 'p.', pages: 'pp.', volume: 'vol.', issue: 'n.º', edition: 'ed.', editor: 'ed.', editors: 'eds.', 'editor-verb': 'editado por', translator: 'trad.', translators: 'trads.', 'translator-verb': 'traducido por', 'et-al': 'et al.', and: 'y', accessed: 'consultado el', 'page-range-delimiter': '-', recipient: 'a', 'recipient-verb': 'a', number: 'n.º' },
+    fr: { page: 'p.', pages: 'p.', volume: 'vol.', volumes: 'vol.', issue: 'n°', edition: 'éd.', editor: 'éd.', editors: 'éd.', 'editor-verb': 'sous la direction de', translator: 'trad.', translators: 'trad.', 'translator-verb': 'traduit par', 'et-al': 'et al.', and: 'et', accessed: 'consulté le', 'page-range-delimiter': '-', recipient: 'à', 'recipient-verb': 'à', number: 'n°' },
+    de: { page: 'S.', pages: 'S.', volume: 'Bd.', volumes: 'Bde.', issue: 'H.', edition: 'Aufl.', editor: 'Hrsg.', editors: 'Hrsg.', 'editor-verb': 'herausgegeben von', translator: 'Übers.', translators: 'Übers.', 'translator-verb': 'übersetzt von', 'et-al': 'u. a.', and: 'und', accessed: 'zugegriffen am', 'page-range-delimiter': '–', recipient: 'an', 'recipient-verb': 'an', number: 'Nr.' },
+    it: { page: 'p.', pages: 'pp.', volume: 'vol.', volumes: 'voll.', issue: 'n.', edition: 'ed.', editor: 'a cura di', editors: 'a cura di', 'editor-verb': 'a cura di', translator: 'trad.', translators: 'trad.', 'translator-verb': 'tradotto da', 'et-al': 'et al.', and: 'e', accessed: 'consultato il', 'page-range-delimiter': '-', recipient: 'a', 'recipient-verb': 'a', number: 'n.' },
+    es: { page: 'p.', pages: 'pp.', volume: 'vol.', volumes: 'vols.', issue: 'n.º', edition: 'ed.', editor: 'ed.', editors: 'eds.', 'editor-verb': 'editado por', translator: 'trad.', translators: 'trads.', 'translator-verb': 'traducido por', 'et-al': 'et al.', and: 'y', accessed: 'consultado el', 'page-range-delimiter': '-', recipient: 'a', 'recipient-verb': 'a', number: 'n.º' },
   };
   function langName(k) { return k === 'ja' ? '和文' : k === 'en' ? '欧文' : (LANG_NAMES[k] || k); }
 
-  // 言語を足す。うまくいけば null、だめなら理由の文を返す。
-  function addLanguage(model, key) {
-    const k = String(key || '').trim().toLowerCase();
+  // ---- 言語ごとの既定の書式（その言語の人文学の論文で一般的な書き方） ----
+  // 注の形を基本にし、参考文献は注から引用箇所を除いた形（言語によっては姓を前に出す）。
+  // 典拠は各項目の src。どれも足場で、投稿先の規定に合わせて直す前提。
+  // 注形式以外の型（著者年・番号など）では、参考文献にだけこの形を使い、本文中の引用は欧文の書式を写す。
+  const NBSP = ' ';
+  // 引用箇所の部品。label＝用語表の頁の語を前に置く（p. 42）。pre/post＝字をじかに付ける（第42页）。
+  const LOC = (o = {}) => F('locator', o.label ? { opt: { label: o.label } } : { prefix: o.pre || '', suffix: o.post || '' });
+  const PAGE = (o = {}) => F('page', o.label ? { opt: { label: o.label } } : { prefix: o.pre || '', suffix: o.post || '' });
+  // 参考文献の並び → 注の並び。掲載頁を引用箇所に替え、無ければ末尾に区切りと引用箇所を足す。
+  function presetNote(bib, sep, loc) {
+    const out = {};
+    for (const [k, chips] of Object.entries(bib)) {
+      const c = clone(chips);
+      // ウェブページの注には引用箇所を付けない（欧文の書式と同じ）
+      if (k === 'web') { out[k] = c; continue; }
+      const i = c.findIndex((x) => x.t === 'field' && x.f === 'page');
+      const l = clone(loc);
+      if (i >= 0) { l.prefix = c[i].prefix; l.suffix = c[i].suffix; if (c[i].opt.label) l.opt = { label: c[i].opt.label }; c[i] = l; } else c.push(S(sep), l);
+      out[k] = c;
+    }
+    return out;
+  }
+  const subBy = (fn) => (tab) => fn(tab, QUOTED_TABS.includes(tab));
+
+  const ZH_NAMES = { ...JA_NAMES, delimiter: '、', etAlMin: 4, etAlUseFirst: 1 };
+  const LANG_PRESETS = [
+    {
+      id: 'zh-cn', lang: 'zh', name: '中国語（大陸式）', ex: '韩庆祥：《21世纪马克思主义的基础性问题》，《中国社会科学》2022年第4期。',
+      src: '中国社会科学杂志社「期刊引文注释规定」（2026年修订）',
+      names: ZH_NAMES, layout: { bib: { suffix: '。' }, cite: { suffix: '。' } }, labelSpace: '',
+      terms: { page: '页', pages: '页', volume: '卷', issue: '期', edition: '版', editor: '主编', editors: '主编', 'editor-verb': '主编', translator: '译', translators: '译', 'translator-verb': '译', 'et-al': '等', and: '、', accessed: '', 'page-range-delimiter': '—' },
+      bib: {
+        book: [F('author'), S('：'), F('title', { wrap: 'zhbook' }), S('，'), F('translator', { opt: { role: 'after' } }), S('，'), F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued', { suffix: '年' })],
+        chapter: [F('author'), S('：'), F('title', { wrap: 'zhbook' }), S('，'), ...Grp([F('editor', { suffix: '：', opt: { role: 'after' } }), F('container-title', { wrap: 'zhbook' })]), S('，'), F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued', { suffix: '年' }), S('，'), PAGE({ pre: '第', post: '页' })],
+        article: [F('author'), S('：'), F('title', { wrap: 'zhbook' }), S('，'), F('container-title', { wrap: 'zhbook' }), F('issued', { suffix: '年' }), F('volume', { prefix: '第', suffix: '卷' }), F('issue', { prefix: '第', suffix: '期' })],
+        web: [F('author'), S('：'), F('title', { wrap: 'zhbook' }), S('，'), F('container-title'), S('，'), F('issued', { opt: { form: 'ymd' } }), S('，'), F('URL'), S('，'), F('accessed', { opt: { form: 'ymd' } })],
+        other: [F('author'), S('：'), F('title', { wrap: 'zhbook' }), S('，'), F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued', { suffix: '年' })],
+      },
+      loc: LOC({ pre: '第', post: '页' }), locSep: '，',
+      sub: subBy(() => [F('author', { opt: { form: 'short' } }), S('：'), F('title', { wrap: 'zhbook', opt: { form: 'short' } }), S('，'), LOC({ pre: '第', post: '页' })]),
+      ibid: subBy(() => [F('literal', { opt: { value: '同上' } }), S('，'), LOC({ pre: '第', post: '页' })]),
+    },
+    {
+      id: 'zh-tw', lang: 'zh', name: '中国語（台湾式）', ex: '李定一，《中華史綱》(臺北：傳記文學出版社，1986)，頁38-45。',
+      src: '《國立政治大學歷史學報》撰稿格式',
+      names: ZH_NAMES, layout: { bib: { suffix: '。' }, cite: { suffix: '。' } }, labelSpace: '',
+      terms: { page: '頁', pages: '頁', volume: '卷', issue: '期', edition: '版', editor: '編', editors: '編', 'editor-verb': '編', translator: '譯', translators: '譯', 'translator-verb': '譯', 'et-al': '等', and: '、', accessed: '檢索日期', 'page-range-delimiter': '-' },
+      // 参考文献は括弧を外して「地：社，年」。注は「(地：社，年)」。
+      bib: {
+        book: [F('author'), S('，'), F('title', { wrap: 'zhbook' }), S('，'), F('translator', { opt: { role: 'after' } }), S('，'), F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued')],
+        chapter: [F('author'), S('，'), F('title', { wrap: 'zharticle' }), S('，'), ...Grp([F('editor', { opt: { role: 'after' } }), S('，'), F('container-title', { wrap: 'zhbook' })], '收入'), S('，'), F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued'), S('，'), PAGE({ pre: '頁' })],
+        article: [F('author'), S('，'), F('title', { wrap: 'zharticle' }), S('，'), F('container-title', { wrap: 'zhbook' }), S('，'), ...Grp([F('volume', { prefix: '第', suffix: '卷' }), F('issue', { prefix: '第', suffix: '期' })]), F('issued', { prefix: '(', suffix: ')' }), S('，'), PAGE({ pre: '頁' })],
+        web: [F('author'), S('，'), F('title', { wrap: 'zharticle' }), S('，'), F('container-title', { wrap: 'zhbook' }), S('，'), F('URL'), F('accessed', { prefix: '（檢索日期：', suffix: '）', opt: { form: 'ymd' } })],
+        other: [F('author'), S('，'), F('title', { wrap: 'zhbook' }), S('，'), F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued')],
+      },
+      note: {
+        book: [F('author'), S('，'), F('title', { wrap: 'zhbook' }), S('，'), F('translator', { opt: { role: 'after' } }), ...Grp([F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued')], '(', ')'), S('，'), LOC({ pre: '頁' })],
+        chapter: [F('author'), S('，'), F('title', { wrap: 'zharticle' }), S('，'), ...Grp([F('editor', { opt: { role: 'after' } }), S('，'), F('container-title', { wrap: 'zhbook' })], '收入'), ...Grp([F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued')], '(', ')'), S('，'), LOC({ pre: '頁' })],
+        article: [F('author'), S('，'), F('title', { wrap: 'zharticle' }), S('，'), F('container-title', { wrap: 'zhbook' }), S('，'), ...Grp([F('volume', { prefix: '第', suffix: '卷' }), F('issue', { prefix: '第', suffix: '期' })]), F('issued', { prefix: '(', suffix: ')' }), S('，'), LOC({ pre: '頁' })],
+        web: [F('author'), S('，'), F('title', { wrap: 'zharticle' }), S('，'), F('container-title', { wrap: 'zhbook' }), S('，'), F('URL'), F('accessed', { prefix: '（檢索日期：', suffix: '）', opt: { form: 'ymd' } })],
+        other: [F('author'), S('，'), F('title', { wrap: 'zhbook' }), ...Grp([F('publisher-place'), S('：'), F('publisher'), S('，'), F('issued')], '(', ')'), S('，'), LOC({ pre: '頁' })],
+      },
+      // この規定は「同上」「同前引書」を使わず、2回目以降はいつも短縮形にする。
+      sub: subBy((tab, q) => [F('author', { opt: { form: 'short' } }), S('，'), F('title', { wrap: q ? 'zharticle' : 'zhbook', opt: { form: 'short' } }), S('，'), LOC({ pre: '頁' })]),
+      ibid: subBy((tab, q) => [F('author', { opt: { form: 'short' } }), S('，'), F('title', { wrap: q ? 'zharticle' : 'zhbook', opt: { form: 'short' } }), S('，'), LOC({ pre: '頁' })]),
+    },
+    {
+      id: 'ko', lang: 'ko', name: '韓国語', ex: '진홍섭, 『韓國金屬工藝』, 일지사, 1980, 25쪽.',
+      src: '『文物硏究』執筆要領（KCI）、『사학연구』投稿規定',
+      names: { ...JA_NAMES, delimiter: '･', etAlMin: 4, etAlUseFirst: 1, roleAfterPrefix: ' ' }, layout: { bib: { suffix: '.' }, cite: { suffix: '.' } }, labelSpace: '',
+      terms: { page: '쪽', pages: '쪽', volume: '권', issue: '호', edition: '판', editor: '편', editors: '편', 'editor-verb': '편', translator: '옮김', translators: '옮김', 'translator-verb': '옮김', 'et-al': '외', and: '･', accessed: '검색일', 'page-range-delimiter': '~' },
+      bib: {
+        book: [F('author'), F('translator', { prefix: '(', suffix: ')', opt: { role: 'after' } }), S(', '), F('title', { wrap: 'nijukagi' }), S(', '), F('publisher'), S(', '), F('issued')],
+        chapter: [F('author'), S(', '), F('title', { wrap: 'kagi' }), S(', '), F('container-title', { wrap: 'nijukagi' }), F('editor', { prefix: '(', suffix: ')', opt: { role: 'after' } }), S(', '), F('publisher'), S(', '), F('issued'), S(', '), PAGE({ post: '쪽' })],
+        article: [F('author'), S(', '), F('title', { wrap: 'kagi' }), S(', '), F('container-title', { wrap: 'nijukagi' }), F('volume', { prefix: ' ', suffix: '권' }), F('issue', { prefix: ' ', suffix: '호' }), S(', '), F('issued'), S(', '), PAGE({ post: '쪽' })],
+        web: [F('author'), S(', '), F('title', { wrap: 'kagi' }), S(', '), F('container-title'), S(', '), F('URL'), F('accessed', { prefix: '(검색일: ', suffix: ')', opt: { form: 'numeric' } })],
+        other: [F('author'), S(', '), F('title', { wrap: 'nijukagi' }), S(', '), F('publisher'), S(', '), F('issued')],
+      },
+      loc: LOC({ post: '쪽' }), locSep: ', ',
+      // 直前の文献は「위의 책／위의 논문」、それより前の文献は「앞의 책／앞의 논문」。
+      sub: subBy((tab, q) => [F('author', { opt: { form: 'short' } }), S(', '), F('literal', { opt: { value: q ? '앞의 논문' : '앞의 책' } }), S(', '), LOC({ post: '쪽' })]),
+      ibid: subBy((tab, q) => [F('literal', { opt: { value: q ? '위의 논문' : '위의 책' } }), S(', '), LOC({ post: '쪽' })]),
+    },
+    {
+      id: 'ru', lang: 'ru', name: 'ロシア語', ex: 'Корявко В. И. Эволюция форм применения // Воен. мысль. 2006. № 4. С. 64–67.',
+      src: 'ГОСТ Р 7.0.5-2008（注）。区切りは「. –」を省いた注の形',
+      names: { ...EN_NAMES, and: 'none', initialize: true, initializeWith: '. ', sortSeparator: ' ', etAlMin: 4, etAlUseFirst: 3, precedesLastInverted: 'contextual' },
+      layout: { bib: { suffix: '.' }, cite: { suffix: '.' } }, labelSpace: ' ',
+      terms: { page: 'С.', pages: 'С.', volume: 'Т.', issue: '№', edition: 'изд.', editor: 'ред.', editors: 'ред.', 'editor-verb': 'под ред.', translator: 'пер.', translators: 'пер.', 'translator-verb': 'пер.', 'et-al': 'и др.', and: 'и', accessed: 'дата обращения', 'page-range-delimiter': '–' },
+      bib: {
+        book: [F('author', { opt: { order: 'family-all' } }), S('. '), F('title'), S(' / '), F('translator', { opt: { role: 'before' } }), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')])],
+        chapter: [F('author', { opt: { order: 'family-all' } }), S('. '), F('title'), S(' // '), F('container-title'), F('editor', { prefix: ' / ', opt: { role: 'before' } }), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')]), S('. '), PAGE({ label: 'before' })],
+        article: [F('author', { opt: { order: 'family-all' } }), S('. '), F('title'), S(' // '), F('container-title'), S('. '), F('issued'), S('. '), F('volume', { opt: { label: 'before' } }), S(', '), F('issue', { opt: { label: 'before' } }), S('. '), PAGE({ label: 'before' })],
+        web: [F('author', { opt: { order: 'family-all' } }), S('. '), F('title'), S(' // '), F('container-title'), S('. '), F('URL', { prefix: 'URL: ' }), F('accessed', { prefix: ' (дата обращения: ', suffix: ')', opt: { form: 'numeric' } })],
+        other: [F('author', { opt: { order: 'family-all' } }), S('. '), F('title'), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')])],
+      },
+      loc: LOC({ label: 'before' }), locSep: '. ',
+      sub: subBy(() => [F('author', { opt: { order: 'family-all' } }), S(' '), F('literal', { opt: { value: 'Указ. соч.' } }), S(' '), LOC({ label: 'before' })]),
+      ibid: subBy(() => [F('literal', { opt: { value: 'Там же' } }), S('. '), LOC({ label: 'before' })]),
+    },
+    {
+      id: 'fr', lang: 'fr', name: 'フランス語', ex: 'Alessio Sopracasa, « Turcs et choses turques », Turcica, 44 (2012), p. 31-128.',
+      src: 'EPHE Sciences historiques et philologiques, Normes éditoriales (2024) ほか',
+      names: { ...EN_NAMES }, layout: { bib: { suffix: '.' }, cite: { suffix: '.' } }, labelSpace: ' ',
+      terms: { ...LANG_TERMS.fr, pages: 'p.', editor: 'dir.', editors: 'dir.', 'editor-verb': 'sous la direction de', 'translator-verb': 'trad. par' },
+      bib: {
+        book: [F('author', { opt: { order: 'family' } }), S(', '), F('title', { italic: true }), S(', '), F('translator', { opt: { role: 'before' } }), S(', '), F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued')],
+        chapter: [F('author', { opt: { order: 'family' } }), S(', '), F('title', { wrap: 'gfr' }), S(', '), ...Grp([F('editor', { opt: { role: 'after', rolePrefix: ' (', roleSuffix: ')' } }), S(', '), F('container-title', { italic: true })], 'dans '), S(', '), F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued'), S(', '), PAGE({ label: 'before' })],
+        article: [F('author', { opt: { order: 'family' } }), S(', '), F('title', { wrap: 'gfr' }), S(', '), F('container-title', { italic: true }), S(', '), F('volume'), S(', '), F('issue', { opt: { label: 'before' } }), F('issued', { prefix: ' (', suffix: ')' }), S(', '), PAGE({ label: 'before' })],
+        web: [F('author', { opt: { order: 'family' } }), S(', '), F('title', { wrap: 'gfr' }), S(', '), F('container-title', { italic: true }), S(', '), F('URL'), S(', '), F('accessed', { prefix: 'consulté le ', opt: { form: 'ymd' } })],
+        other: [F('author', { opt: { order: 'family' } }), S(', '), F('title', { italic: true }), S(', '), F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued')],
+      },
+      // 注では名を前に置く（Alessio Sopracasa）。
+      noteNames: true, loc: LOC({ label: 'before' }), locSep: ', ',
+      sub: subBy((tab, q) => [F('author', { opt: { form: 'short' } }), S(', '), F('title', q ? { wrap: 'gfr', opt: { form: 'short' } } : { italic: true, opt: { form: 'short' } }), S(', '), LOC({ label: 'before' })]),
+      ibid: subBy(() => [F('literal', { italic: true, opt: { value: 'Ibid.' } }), S(', '), LOC({ label: 'before' })]),
+    },
+    {
+      id: 'de', lang: 'de', name: 'ドイツ語', ex: 'Wolfgang Neugebauer, Das alte Preußen, in: Historisches Jahrbuch 122 (2002), S. 463–482.',
+      src: 'Historisches Jahrbuch, Style-Sheet (2012) ほか',
+      names: { ...EN_NAMES, delimiter: '/', and: 'none', precedesLast: 'never', precedesLastInverted: 'never' }, layout: { bib: { suffix: '.' }, cite: { suffix: '.' } }, labelSpace: ' ',
+      terms: { ...LANG_TERMS.de, editor: 'Hg.', editors: 'Hgg.', 'editor-verb': 'hg. v.', 'translator-verb': 'übers. v.' },
+      // 出版者を書かず「Ort Jahr」。題名は引用符・斜体で括らない。
+      bib: {
+        book: [F('author', { opt: { order: 'family' } }), S(': '), F('title'), S(', '), F('translator', { opt: { role: 'before' } }), S(', '), ...Grp([F('publisher-place'), S(' '), F('issued')])],
+        chapter: [F('author', { opt: { order: 'family' } }), S(': '), F('title'), S(', '), ...Grp([F('editor', { opt: { role: 'after', rolePrefix: ' (', roleSuffix: ')' } }), S(', '), F('container-title')], 'in: '), S(', '), ...Grp([F('publisher-place'), S(' '), F('issued')]), S(', '), PAGE({ label: 'before' })],
+        article: [F('author', { opt: { order: 'family' } }), S(': '), F('title'), S(', '), F('container-title', { prefix: 'in: ' }), F('volume', { prefix: ' ' }), F('issued', { prefix: ' (', suffix: ')' }), S(', '), PAGE({ label: 'before' })],
+        web: [F('author', { opt: { order: 'family' } }), S(': '), F('title'), S(', '), F('container-title', { prefix: 'in: ' }), S(', '), F('URL'), F('accessed', { prefix: ' (Zugriff: ', suffix: ')', opt: { form: 'numeric' } })],
+        other: [F('author', { opt: { order: 'family' } }), S(': '), F('title'), S(', '), ...Grp([F('publisher-place'), S(' '), F('issued')])],
+      },
+      noteNames: true, noteAuthorSep: ', ', loc: LOC({ label: 'before' }), locSep: ', ',
+      sub: subBy(() => [F('author', { opt: { form: 'short' } }), S(', '), F('title', { opt: { form: 'short' } }), S(', '), LOC({ label: 'before' })]),
+      ibid: subBy(() => [F('literal', { opt: { value: 'Ebd.' } }), S(', '), LOC({ label: 'before' })]),
+    },
+    {
+      id: 'ar', lang: 'ar', name: 'アラビア語', ex: 'محمد حسن، "الأمن القومي العربي"، إستراتيجيات، مج 15، العدد 1 (2009)، ص 129.',
+      src: 'アラブ調査政策研究センター（ドーハ）『دليل التحرير』',
+      names: { ...EN_NAMES, delimiter: '، ', and: 'none', sortSeparator: '، ', etAlMin: 4, etAlUseFirst: 1 }, layout: { bib: { suffix: '.' }, cite: { suffix: '.' } }, labelSpace: '',
+      terms: { page: 'ص', pages: 'ص', volume: 'مج', issue: 'العدد', edition: 'ط', editor: 'محرر', editors: 'محررون', 'editor-verb': 'تحرير', translator: 'مترجم', translators: 'مترجمون', 'translator-verb': 'ترجمة', 'et-al': '[وآخرون]', and: 'و', accessed: 'شوهد في', 'page-range-delimiter': '-' },
+      bib: {
+        book: [F('author', { opt: { order: 'family' } }), S('. '), F('title'), S('. '), F('translator', { opt: { role: 'before' } }), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S('، '), F('issued')])],
+        chapter: [F('author', { opt: { order: 'family' } }), S('. '), F('title', { wrap: 'sdq' }), S('. '), ...Grp([F('editor', { opt: { role: 'after', rolePrefix: ' (', roleSuffix: ')' } }), S('، '), F('container-title')], 'في: '), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S('، '), F('issued')]), S('، '), PAGE({ pre: 'ص ' })],
+        article: [F('author', { opt: { order: 'family' } }), S('. '), F('title', { wrap: 'sdq' }), S('. '), F('container-title'), S('. '), F('volume', { prefix: 'مج ' }), S('، '), F('issue', { prefix: 'العدد ' }), F('issued', { prefix: ' (', suffix: ')' }), S('، '), PAGE({ pre: 'ص ' })],
+        web: [F('author', { opt: { order: 'family' } }), S('. '), F('title', { wrap: 'sdq' }), S('. '), F('container-title'), S('، '), F('issued', { opt: { form: 'numeric' } }), S('، '), F('accessed', { prefix: 'شوهد في ', opt: { form: 'numeric' } }), S('، '), F('URL', { prefix: 'في: ' })],
+        other: [F('author', { opt: { order: 'family' } }), S('. '), F('title'), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S('، '), F('issued')])],
+      },
+      note: {
+        book: [F('author'), S('، '), F('title'), S('، '), F('translator', { opt: { role: 'before' } }), S(' '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S('، '), F('issued')], '(', ')'), S('، '), LOC({ pre: 'ص ' })],
+        chapter: [F('author'), S('، '), F('title', { wrap: 'sdq' }), S('، '), ...Grp([F('editor', { opt: { role: 'after', rolePrefix: ' (', roleSuffix: ')' } }), S('، '), F('container-title')], 'في: '), S(' '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S('، '), F('issued')], '(', ')'), S('، '), LOC({ pre: 'ص ' })],
+        article: [F('author'), S('، '), F('title', { wrap: 'sdq' }), S('، '), F('container-title'), S('، '), F('volume', { prefix: 'مج ' }), S('، '), F('issue', { prefix: 'العدد ' }), F('issued', { prefix: ' (', suffix: ')' }), S('، '), LOC({ pre: 'ص ' })],
+        web: [F('author'), S('، '), F('title', { wrap: 'sdq' }), S('، '), F('container-title'), S('، '), F('issued', { opt: { form: 'numeric' } }), S('، '), F('accessed', { prefix: 'شوهد في ', opt: { form: 'numeric' } }), S('، '), F('URL', { prefix: 'في: ' })],
+        other: [F('author'), S('، '), F('title'), S(' '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S('، '), F('issued')], '(', ')'), S('، '), LOC({ pre: 'ص ' })],
+      },
+      sub: subBy(() => [F('author', { opt: { form: 'short' } }), S('، '), LOC({ pre: 'ص ' })]),
+      ibid: subBy(() => [F('literal', { opt: { value: 'المرجع نفسه' } }), S('، '), LOC({ pre: 'ص ' })]),
+    },
+    {
+      id: 'it', lang: 'it', name: 'イタリア語', ex: 'A. Galante Garrone, L’emigrazione politica, in “Rassegna storica del Risorgimento” 41 (1954), pp. 223-242.',
+      src: 'Il Risorgimento, Norme redazionali（FrancoAngeli）',
+      names: { ...EN_NAMES, initialize: true, precedesLast: 'never', precedesLastInverted: 'never' }, layout: { bib: { suffix: '.' }, cite: { suffix: '.' } }, labelSpace: ' ',
+      terms: { ...LANG_TERMS.it, 'translator-verb': 'trad. di' },
+      bib: {
+        book: [F('author'), S(', '), F('title', { italic: true }), S(', '), F('translator', { opt: { role: 'before' } }), S(', '), F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued')],
+        chapter: [F('author'), S(', '), F('title', { italic: true }), S(', '), ...Grp([F('editor', { opt: { role: 'after', rolePrefix: ' (', roleSuffix: ')' } }), S(', '), F('container-title', { italic: true })], 'in '), S(', '), F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued'), S(', '), PAGE({ label: 'before' })],
+        article: [F('author'), S(', '), F('title', { italic: true }), S(', '), F('container-title', { prefix: 'in ', wrap: 'dquote' }), F('volume', { prefix: ' ' }), F('issued', { prefix: ' (', suffix: ')' }), S(', '), PAGE({ label: 'before' })],
+        web: [F('author'), S(', '), F('title', { italic: true }), S(', '), F('container-title'), S(', '), F('URL'), F('accessed', { prefix: ' (consultato il ', suffix: ')', opt: { form: 'ymd' } })],
+        other: [F('author'), S(', '), F('title', { italic: true }), S(', '), F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued')],
+      },
+      loc: LOC({ label: 'before' }), locSep: ', ',
+      sub: subBy(() => [F('author', { opt: { form: 'short' } }), S(', '), F('title', { italic: true, suffix: ' cit.', opt: { form: 'short' } }), S(', '), LOC({ label: 'before' })]),
+      ibid: subBy(() => [F('literal', { opt: { value: 'Ivi' } }), S(', '), LOC({ label: 'before' })]),
+    },
+    {
+      id: 'es', lang: 'es', name: 'スペイン語', ex: 'Kamen, Henry: La Inquisición. Madrid, Alianza, 1982, p. 55.',
+      src: 'Espacio, Tiempo y Forma, Serie V（UNED）Normas de publicación',
+      names: { ...EN_NAMES, and: 'symbol', etAlMin: 4, etAlUseFirst: 1, precedesLastInverted: 'never' }, layout: { bib: { suffix: '.' }, cite: { suffix: '.' } }, labelSpace: ' ',
+      terms: { ...LANG_TERMS.es, 'translator-verb': 'trad. de', 'et-al': 'et al.' },
+      bib: {
+        book: [F('author', { opt: { order: 'family-all' } }), S(': '), F('title', { italic: true }), S('. '), F('translator', { opt: { role: 'before' } }), S('. '), ...Grp([F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued')])],
+        chapter: [F('author', { opt: { order: 'family-all' } }), S(': '), F('title', { wrap: 'guil' }), S(', '), ...Grp([F('editor', { opt: { order: 'family-all', role: 'after', rolePrefix: ' (', roleSuffix: ')' } }), S(': '), F('container-title', { italic: true })], 'en '), S('. '), ...Grp([F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued')]), S(', '), PAGE({ label: 'before' })],
+        article: [F('author', { opt: { order: 'family-all' } }), S(': '), F('title', { wrap: 'guil' }), S(', '), F('container-title', { italic: true }), S(', '), F('volume'), F('issued', { prefix: ' (', suffix: ')' }), S(', '), PAGE({ label: 'before' })],
+        web: [F('author', { opt: { order: 'family-all' } }), S(': '), F('title', { wrap: 'guil' }), S(', '), F('container-title', { italic: true }), S('. '), F('URL'), F('accessed', { prefix: ' [Consultado el ', suffix: ']', opt: { form: 'numeric' } })],
+        other: [F('author', { opt: { order: 'family-all' } }), S(': '), F('title', { italic: true }), S('. '), ...Grp([F('publisher-place'), S(', '), F('publisher'), S(', '), F('issued')])],
+      },
+      loc: LOC({ label: 'before' }), locSep: ', ',
+      sub: subBy((tab, q) => [F('author', { opt: { form: 'short' } }), S(': '), F('title', q ? { wrap: 'guil', opt: { form: 'short' } } : { italic: true, opt: { form: 'short' } }), S(', '), LOC({ label: 'before' })]),
+      ibid: subBy(() => [F('literal', { opt: { value: 'Ibidem' } }), S(', '), LOC({ label: 'before' })]),
+    },
+    {
+      id: 'tr', lang: 'tr', name: 'トルコ語', ex: 'Jon Hoover, "İslâmî Monoteizm ve Teslîs", Oksident 1/1 (2019), 117-143.',
+      src: 'İSNAD Atıf Sistemi 2. Edisyon（dipnotlu）',
+      names: { ...EN_NAMES, precedesLast: 'never', precedesLastInverted: 'never' }, layout: { bib: { suffix: '.' }, cite: { suffix: '.' } }, labelSpace: ' ',
+      terms: { page: 's.', pages: 'ss.', volume: 'C.', issue: 'S.', edition: 'bs.', editor: 'ed.', editors: 'ed.', 'editor-verb': 'ed.', translator: 'çev.', translators: 'çev.', 'translator-verb': 'çev.', 'et-al': 'vd.', and: 've', accessed: 'Erişim', 'page-range-delimiter': '-' },
+      bib: {
+        book: [F('author', { opt: { order: 'family' } }), S('. '), F('title', { italic: true }), S('. '), F('translator', { opt: { role: 'before' } }), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')])],
+        chapter: [F('author', { opt: { order: 'family' } }), S('. '), F('title', { wrap: 'sdq' }), S('. '), F('container-title', { italic: true }), S('. '), F('editor', { opt: { role: 'before' } }), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')]), S('. '), F('page')],
+        article: [F('author', { opt: { order: 'family' } }), S('. '), F('title', { wrap: 'sdq' }), S('. '), F('container-title', { italic: true }), S(' '), F('volume'), F('issue', { prefix: '/' }), F('issued', { prefix: ' (', suffix: ')' }), S(', '), F('page')],
+        web: [F('author', { opt: { order: 'family' } }), S('. '), F('title', { wrap: 'sdq' }), S('. '), F('container-title'), S('. '), F('accessed', { prefix: 'Erişim ', opt: { form: 'ymd' } }), S('. '), F('URL')],
+        other: [F('author', { opt: { order: 'family' } }), S('. '), F('title', { italic: true }), S('. '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')])],
+      },
+      note: {
+        book: [F('author'), S(', '), F('title', { italic: true }), S(', '), F('translator', { opt: { role: 'before' } }), S(' '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')], '(', ')'), S(', '), LOC()],
+        chapter: [F('author'), S(', '), F('title', { wrap: 'sdq' }), S(', '), F('container-title', { italic: true }), S(', '), F('editor', { opt: { role: 'before' } }), S(' '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')], '(', ')'), S(', '), LOC()],
+        article: [F('author'), S(', '), F('title', { wrap: 'sdq' }), S(', '), F('container-title', { italic: true }), S(' '), F('volume'), F('issue', { prefix: '/' }), F('issued', { prefix: ' (', suffix: ')' }), S(', '), LOC()],
+        web: [F('author'), S(', '), F('title', { wrap: 'sdq' }), S(', '), F('container-title'), S(', '), F('accessed', { prefix: 'Erişim ', opt: { form: 'ymd' } }), S(', '), F('URL')],
+        other: [F('author'), S(', '), F('title', { italic: true }), S(' '), ...Grp([F('publisher-place'), S(': '), F('publisher'), S(', '), F('issued')], '(', ')'), S(', '), LOC()],
+      },
+      sub: subBy((tab, q) => [F('author', { opt: { form: 'short' } }), S(', '), F('title', q ? { wrap: 'sdq', opt: { form: 'short' } } : { italic: true, opt: { form: 'short' } }), S(', '), LOC()]),
+      ibid: subBy((tab, q) => [F('author', { opt: { form: 'short' } }), S(', '), F('title', q ? { wrap: 'sdq', opt: { form: 'short' } } : { italic: true, opt: { form: 'short' } }), S(', '), LOC()]),
+    },
+  ];
+
+  // 参考文献の並びから注の並びを作る。noteNames＝注では名を前に置く（姓を前に出す指定を外す）。
+  function presetNoteChips(p) {
+    if (p.note) return clone(p.note);
+    const bib = clone(p.bib);
+    if (p.noteNames) {
+      for (const chips of Object.values(bib)) {
+        chips.forEach((c, i) => {
+          if (c.t === 'field' && (c.f === 'author' || c.f === 'editor') && c.opt.order) delete c.opt.order;
+          // 参考文献で著者の後ろが「: 」のもの（ドイツ語）は、注では「, 」にする
+          if (p.noteAuthorSep && c.t === 'sep' && i > 0 && chips[i - 1].t === 'field' && chips[i - 1].f === 'author') c.v = p.noteAuthorSep;
+        });
+      }
+    }
+    return presetNote(bib, p.locSep || ', ', p.loc);
+  }
+  function presetSystem(p, model) {
+    const en = model.systems.en;
+    const tabs = Object.keys(en.bib || p.bib);
+    const pick = (src) => Object.fromEntries(tabs.map((t) => [t, clone(src[t] || src.other)]));
+    const bibSrc = pick(p.bib);
+    const sys = { label: p.name, preset: p.id, names: clone(p.names), labelSpace: p.labelSpace };
+    if (model.kind === 'note') {
+      sys.bib = bibSrc;
+      sys.cite = pick(presetNoteChips(p));
+      sys.citeSub = Object.fromEntries(tabs.map((t) => [t, p.sub(t)]));
+      sys.citeIbid = Object.fromEntries(tabs.map((t) => [t, p.ibid(t)]));
+      sys.layout = clone(p.layout);
+    } else {
+      // 本文中の引用（著者年・番号など）は欧文の書式を写し、参考文献だけをこの言語の形にする。
+      sys.bib = model.kind === 'numeric' ? withNumber(bibSrc, ' ') : bibSrc;
+      sys.cite = clone(en.cite);
+      sys.layout = { bib: clone(p.layout.bib), cite: clone((en.layout || {}).cite || {}) };
+    }
+    return sys;
+  }
+
+  // 言語を足す。preset に LANG_PRESETS の id を渡すと、その言語の既定の書式で作る。
+  // 渡さなければ、いまの欧文の書式を写す。うまくいけば null、だめなら理由の文を返す。
+  function addLanguage(model, key, preset) {
+    const p = preset ? LANG_PRESETS.find((x) => x.id === preset) : null;
+    const k = p ? p.lang : String(key || '').trim().toLowerCase();
     if (!/^[a-z]{2,3}$/.test(k)) return '言語コードは、Zotero の「言語」欄の先頭の2〜3文字（fr、de など）で入れてください。';
     if (k === 'ja' || k === 'en') return `${k} は「${langName(k)}の書式」として最初からあります。`;
     model.extraLangs = model.extraLangs || [];
-    if (model.extraLangs.includes(k)) return `${k} の書式はもうあります。`;
-    const sys = clone(model.systems.en);
-    sys.label = langName(k);
-    for (const tg of TARGETS) for (const tab of Object.keys(sys[tg] || {})) sys[tg][tab].forEach((c) => { delete c.uid; });
+    if (model.extraLangs.includes(k)) return `${langName(k)}（${k}）の書式はもうあります。別の形にしたいときは、いまの書式を消してから足してください。`;
+    let sys;
+    if (p) sys = presetSystem(p, model);
+    else {
+      sys = clone(model.systems.en);
+      sys.label = langName(k);
+      for (const tg of TARGETS) for (const tab of Object.keys(sys[tg] || {})) sys[tg][tab].forEach((c) => { delete c.uid; });
+    }
     model.systems[k] = sys;
     model.terms = model.terms || {};
-    model.terms[k] = { ...TERMS_EN, ...(model.terms.en || {}), ...(LANG_TERMS[k] || {}) };
+    model.terms[k] = p ? { ...TERMS_EN, ...p.terms } : { ...TERMS_EN, ...(model.terms.en || {}), ...(LANG_TERMS[k] || {}) };
+    // 既定の書式の用語に複数の巻が無ければ、英語の vols. ではなく1巻の語を使う（中国語の「卷」など）
+    if (p && p.terms.volumes === undefined) model.terms[k].volumes = model.terms[k].volume;
     model.extraLangs.push(k);
     return null;
   }
@@ -286,6 +545,8 @@
     for (const [k, t] of Object.entries(model.terms)) {
       const base = k === 'ja' ? TERMS_JA : { ...TERMS_EN, ...(LANG_TERMS[k] || {}) };
       for (const key of ['recipient', 'recipient-verb', 'number']) if (t[key] === undefined) t[key] = base[key];
+      // 複数の巻は、1巻の語を初期値のまま使っていれば初期値の複数形に、直していればその語に揃える
+      if (t.volumes === undefined && t.volume !== undefined) t.volumes = t.volume === base.volume ? base.volumes : t.volume;
     }
   }
 
@@ -319,7 +580,7 @@
     }
   }
 
-  const api = { STARTERS, makeStarter, F, S, Grp, TARGETS, ensureSubsequent, fillTerms, archivePreset, subPreset, LANG_NAMES, BUNDLED_LOCALES, langName, addLanguage, removeLanguage };
+  const api = { STARTERS, makeStarter, F, S, Grp, TARGETS, ensureSubsequent, fillTerms, archivePreset, subPreset, LANG_NAMES, BUNDLED_LOCALES, LANG_PRESETS, langName, addLanguage, removeLanguage };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CSLStarters = api;
 })(typeof self !== 'undefined' ? self : this);

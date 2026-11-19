@@ -18,6 +18,7 @@
     'container-title': { label: '掲載誌名・収録書名', kind: 'text', hasForm: true },
     'collection-title': { label: '叢書名', kind: 'text' },
     volume: { label: '巻', kind: 'number', term: 'volume' },
+    'number-of-volumes': { label: '総巻数', kind: 'number', term: 'volume' },
     issue: { label: '号', kind: 'number', term: 'issue' },
     page: { label: '頁', kind: 'number', term: 'page' },
     'page-first': { label: '頁（最初の頁だけ）', kind: 'number', term: 'page' },
@@ -93,7 +94,8 @@
   const TERM_ROWS = [
     { key: 'page', name: 'page', form: 'short', num: 'single', label: '頁（1頁）' },
     { key: 'pages', name: 'page', form: 'short', num: 'multiple', label: '頁（範囲）' },
-    { key: 'volume', name: 'volume', form: 'short', label: '巻' },
+    { key: 'volume', name: 'volume', form: 'short', num: 'single', label: '巻（1巻）' },
+    { key: 'volumes', name: 'volume', form: 'short', num: 'multiple', label: '巻（複数。総巻数にも）' },
     { key: 'issue', name: 'issue', form: 'short', label: '号' },
     { key: 'edition', name: 'edition', form: 'short', label: '版' },
     { key: 'editor', name: 'editor', form: 'short', num: 'single', label: '編（1人）' },
@@ -131,7 +133,49 @@
     paren: ['（', '）'],
     hparen: ['(', ')'],
     bracket: ['[', ']'],
+    zhbook: ['《', '》'],
+    zharticle: ['〈', '〉'],
+    gfr: ['«\u00a0', '\u00a0»'],
+    guil: ['«', '»'],
+    dequote: ['„', '“'],
+    sdq: ['"', '"'],
   };
+  // ---- 漢数字（縦書き向け） -------------------------------------------------------
+  // CSL には数字を漢数字にする指定が無い。数字を「長い序数」（long-ordinal）で出し、
+  // 用語 long-ordinal-01〜3000 に漢数字を入れて置き換える。仕様が定める用語は 01〜10 だけだが、
+  // citeproc-js（Zotero）は番号の上限を見ないので、この範囲で効く（Zotero 10 で確認、2026-11-19）。
+  // 発行年は日付として組まれるので変わらない。3000 を超える数字は算用数字のまま。
+  const KANJI_MAX = 3000;
+  const KANJI_DIGITS = '〇一二三四五六七八九';
+  function kanjiNumber(n, mode) {
+    if (mode !== 'ten') return String(n).split('').map((d) => KANJI_DIGITS[+d]).join('');
+    // 十式：二百三十・千二百。位の頭の「一」は書かない（十・百・千）。
+    const units = [['千', 1000], ['百', 100], ['十', 10]];
+    let out = '', r = n;
+    for (const [u, v] of units) {
+      const q = Math.floor(r / v);
+      if (q) out += (q === 1 ? '' : KANJI_DIGITS[q]) + u;
+      r %= v;
+    }
+    return out + (r ? KANJI_DIGITS[r] : '');
+  }
+  const kanjiCache = {};
+  function kanjiTerms(mode) {
+    if (!mode || mode === 'none') return '';
+    if (!kanjiCache[mode]) {
+      const out = [];
+      for (let i = 1; i <= KANJI_MAX; i++) out.push(`<term name="long-ordinal-${String(i).padStart(2, '0')}">${kanjiNumber(i, mode)}</term>`);
+      kanjiCache[mode] = out.join('');
+    }
+    return kanjiCache[mode];
+  }
+  // 書式のロケールに足す用語（漢数字を使う書式だけ）
+  function withKanji(extra, sys) {
+    const t = kanjiTerms(sys && sys.kanjiNumerals);
+    if (!t) return extra;
+    return { ...(extra || {}), terms: ((extra && extra.terms) || '') + t };
+  }
+
   const MARK_OPEN = '';
   const MARK_CLOSE = '';
   const MARK_BASE = 0xE100;
@@ -180,7 +224,9 @@
       }
       case 'number': {
         const v = chip.f;
-        inner = `<text${attrs({ variable: v, ...fmt })}/>`;
+        // 漢数字の書式：<number form="long-ordinal"> にして、ロケールの用語で置き換える（番号は算用数字のまま）
+        const kanji = sys.kanjiNumerals && sys.kanjiNumerals !== 'none' && v !== 'citation-number';
+        inner = kanji ? `<number${attrs({ variable: v, form: 'long-ordinal', ...fmt, quotes: false })}/>` : `<text${attrs({ variable: v, ...fmt })}/>`;
         inner = v === 'locator' ? locatorXml(inner, chip, sysKey, sys, def, space) : withLabel(inner, chip, sys, def, space);
         break;
       }
@@ -227,7 +273,8 @@
     const sp = (chip.opt || {}).stripPeriods ? 'true' : '';
     // 用語が値の前に来るときは、部品の「先頭を大文字」を用語に効かせる（No. 27）
     const tc = pos === 'before' && chip.caps === 'capitalize-first' ? 'capitalize-first' : '';
-    if (def.term === 'page' || def.term === 'locator') {
+    // 頁と総巻数は値の数で単数・複数を選ぶ（5 vols.）。<label> がその判定をする
+    if (def.term === 'page' || def.term === 'locator' || chip.f === 'number-of-volumes') {
       lab = `<label${attrs({ variable: chip.f, form: 'short', 'strip-periods': sp, 'text-case': tc })}/>`;
     } else if (def.term === 'accessed') {
       lab = `<text${attrs({ term: 'accessed', 'text-case': tc })}/>`;
@@ -273,7 +320,7 @@
     const lab = role === 'none' ? '' : label(roleForm, role);
     let sub = '';
     if (chip.f === 'author' && opt.substitute !== false) {
-      // 著者が無いときは編者で代える（「山田太郎編」「Name, ed.」）。
+      // 著者が無いときは編者で代える（「山本太郎編」「Name, ed.」）。
       const subPos = (sys.names || {}).substituteRole || 'after';
       const subLab = subPos === 'none' ? '' : label(subPos === 'before' ? 'verb' : 'short', subPos);
       const inside = subPos === 'before' ? subLab + nameEl + etal : nameEl + etal + subLab;
@@ -363,6 +410,8 @@
         out.push(`<term${a}>${esc(g.plain)}</term>`);
       }
     }
+    // 総巻数の用語（<label variable="number-of-volumes"> が引く）は、巻の行から作る
+    if (terms && terms.volume != null) out.push(`<term name="number-of-volumes" form="short"><single>${esc(terms.volume)}</single><multiple>${esc(terms.volumes ?? terms.volume)}</multiple></term>`);
     return `<locale xml:lang="${lang}">${(extra && extra.options) || ''}<terms>${out.join('')}${(extra && extra.terms) || ''}</terms></locale>`;
   }
 
@@ -393,7 +442,7 @@
 
   // ---- 全体 --------------------------------------------------------------------
   // 言語別に書き出すときの既定ロケール（opts.only の書式の言語）。
-  const ONLY_LOCALE = { ja: 'ja-JP', en: 'en-US', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', es: 'es-ES', nl: 'nl-NL', pt: 'pt-PT', ru: 'ru-RU', la: 'la' };
+  const ONLY_LOCALE = { ja: 'ja-JP', en: 'en-US', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', es: 'es-ES', nl: 'nl-NL', pt: 'pt-PT', ru: 'ru-RU', la: 'la', zh: 'zh-CN', ko: 'ko-KR', ar: 'ar', tr: 'tr-TR' };
   // opts.only に書式のキー（ja・en・fr など）を渡すと、その書式だけで全文献を組む標準の CSL 1.0.2 を出す。
   // 言語別のレイアウトと if locale（CSL-M の拡張）を使わないので、pandoc など CSL-M に対応しないソフトでも読める。
   function generate(model, opts) {
@@ -488,7 +537,7 @@
     const srcInfo = (model.source && model.source.kind === 'official') ? model.source : {};
     const body = only ? [
       ...(only === 'en' ? srcLocales : []),
-      localeXml(only, model.terms && model.terms[only], only === 'ja' ? quoteOpts : { options: quoteOpts.options }),
+      localeXml(only, model.terms && model.terms[only], withKanji(only === 'ja' ? quoteOpts : { options: quoteOpts.options }, model.systems[only])),
       ...macros,
       `<citation${citeAttrs}>`,
       `<layout${lay(only, 'cite')}><text macro="cite-${only}"/></layout>`,
@@ -515,10 +564,10 @@
       '</info>',
       ...(body || [
       // 句読点を引用符の内側に入れる設定は、既定ロケール（ja）に置かないと欧文のレイアウトにも効かない（citeproc-js で確認）。
-      localeXml('ja', model.terms && model.terms.ja, quoteOpts),
+      localeXml('ja', model.terms && model.terms.ja, withKanji(quoteOpts, model.systems.ja)),
       ...srcLocales,
-      localeXml('en', model.terms && model.terms.en),
-      ...extras.map((k) => localeXml(k, model.terms && model.terms[k])),
+      localeXml('en', model.terms && model.terms.en, withKanji(null, model.systems.en)),
+      ...extras.map((k) => localeXml(k, model.terms && model.terms[k], withKanji(null, model.systems[k]))),
       ...macros,
       `<citation${citeAttrs}>`,
       ...extras.map((k) => `<layout locale="${k}"${lay(k, 'cite')}><text macro="cite-${k}"/></layout>`),
@@ -557,7 +606,7 @@
   }
 
   const api = {
-    extraLangs, LANG_KEY_RE,
+    extraLangs, LANG_KEY_RE, kanjiNumber, KANJI_MAX,
     FIELDS, TYPE_TABS, TERM_ROWS, WRAPS, tabOfType, tabsOf, ZOTERO_TYPES, CSL_TYPES, cslTypeLabel, generate, systemOfItem,
     embedModel, extractModel, MARK_OPEN, MARK_CLOSE, MARK_BASE,
   };

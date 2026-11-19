@@ -1,12 +1,13 @@
 // ヘッドレスの Chrome でアプリを操作する検証。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
 // puppeteer-core は marp-cli に同梱のものを使う（PUPPETEER_CORE で差し替え可）。Chrome は CHROME で差し替え可。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs'); const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const b = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
   const p = await b.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('dialog', (d) => d.accept());
   await p.setViewport({ width: 1400, height: 1100 });
   await p.goto('file://' + html); await wait(600);
+  await toStarter(p);
   await p.evaluate(() => document.querySelector('#starterList button').click()); await wait(400);
   const cards = () => p.evaluate(() => [...document.querySelectorAll('#previewList .item')].filter(n => !n.hidden).map(n => n.dataset.tab + '/' + n.dataset.authors).join(' '));
   const tabs = () => p.evaluate(() => [...document.querySelectorAll('.type-tabs > button')].map(b => b.textContent).join(' | '));
@@ -28,7 +29,7 @@ const fs = require('fs'); const [html, sp] = process.argv.slice(2); const wait =
   await p.click('#btnAddItem'); await wait(200); await p.click('#btnNewItem'); await wait(300);
   await p.evaluate(() => { const s = document.querySelector('#itemForm select'); console.log(s.options.length); s.value = 'thesis'; s.dispatchEvent(new Event('change')); });
   console.log('入力画面の種類の数:', await p.evaluate(() => document.querySelector('#itemForm select').options.length));
-  await p.evaluate(() => { const set = (lab, v) => { const l = [...document.querySelectorAll('#itemForm label')].find(l => !l.hidden && l.textContent === lab); l.nextElementSibling.value = v; }; set('言語', 'ja'); set('著者', '山田, 花子'); set('題名', '近世越後の村落'); set('大学名', '越後大学'); set('発行年月日', '2020'); });
+  await p.evaluate(() => { const set = (lab, v) => { const l = [...document.querySelectorAll('#itemForm label')].find(l => !l.hidden && l.textContent === lab); l.nextElementSibling.value = v; }; set('言語', 'ja'); set('著者', '山本, 花子'); set('題名', '近世越後の村落'); set('大学名', '越後大学'); set('発行年月日', '2020'); });
   await p.evaluate(() => [...document.querySelectorAll('#itemForm button')].find(b => b.textContent === '入れる').click()); await wait(500);
   console.log('並び:', await cards());
   console.log('学位論文:', await p.evaluate(() => [...document.querySelectorAll('#previewList .item')].find(n => n.dataset.tab === 'x-thesis').querySelector('.v').textContent));

@@ -1,6 +1,6 @@
 // ヘッドレスの Chrome でアプリを操作する検証。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
 // puppeteer-core は marp-cli に同梱のものを使う（PUPPETEER_CORE で差し替え可）。Chrome は CHROME で差し替え可。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter, confirmImport } = require('./_puppeteer.js');
 const fs = require('fs'); const [html, sp] = process.argv.slice(2);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
@@ -10,26 +10,27 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   p.on('dialog', async (d) => { alerts.push(d.message()); await d.accept(); });
   await p.setViewport({ width: 1400, height: 1000 });
   await p.goto('file://' + html); await wait(600);
+  await toStarter(p);
   await p.evaluate(() => document.querySelector('#starterList button').click()); await wait(300);
   // 仏語・瑞語の文献を読み込む
   const data = [
     {id:1,type:'book',language:'fr',title:'Histoire des sciences',author:[{family:'Dupont',given:'Jean'},{family:'Martin',given:'Paul'}],publisher:'Éditions Exemple',issued:{'date-parts':[[2020]]}},
     {id:2,type:'book',language:'en',title:'Archives',author:[{family:'Smith',given:'John'}],publisher:'Press',issued:{'date-parts':[[2022]]}},
     {id:3,type:'webpage',language:'sv',title:'Arkiv',author:[{family:'Berg',given:'Lars'}],URL:'https://e.org',accessed:{'date-parts':[[2026,11,1]]}},
-    {id:4,type:'book',language:'ja',title:'史料学',author:[{family:'山田',given:'花子'}],publisher:'越後書房',issued:{'date-parts':[[2024]]}}];
+    {id:4,type:'book',language:'ja',title:'史料学',author:[{family:'山本',given:'花子'}],publisher:'越後書房',issued:{'date-parts':[[2024]]}}];
   fs.writeFileSync(sp + '/lang_items.json', JSON.stringify(data));
   await p.click('#btnAddItem'); await wait(200);
-  const [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnPickItems')]); await fc.accept([sp + '/lang_items.json']); await wait(500);
+  const [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnPickItems')]); await fc.accept([sp + '/lang_items.json']); await wait(500); await confirmImport(p);
   const prev = () => p.evaluate(() => [...document.querySelectorAll('#previewList .item')].map((n) => n.querySelector('.badge.sys-ja,.badge.sys-en').textContent + ' | ' + n.querySelector('.v').textContent + (n.querySelector('.warn') ? ' ⚠ ' + n.querySelector('.warn').textContent : '')));
   console.log('足す前:\n ' + (await prev()).join('\n '));
   // タブの「＋ 言語ごとの書式」→ fr を足す
   await p.click('.add-lang'); await wait(200);
-  await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
-  await p.type('#newLang', 'sv').catch(() => {});
+  await p.evaluate(() => document.querySelectorAll('.lang-other').forEach((d) => { d.open = true; })); await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
+  await p.evaluate(() => document.querySelectorAll('.lang-other').forEach((d) => { d.open = true; })); await p.type('#newLang', 'sv').catch(() => {});
   await p.evaluate(() => { const t=[...document.querySelectorAll('#panelTabs button')].find(b=>b.textContent==='全体の設定'); t.click(); }); await wait(200);
-  await p.type('#newLang', 'sv'); await p.keyboard.press('Enter'); await wait(400);
+  await p.evaluate(() => document.querySelectorAll('.lang-other').forEach((d) => { d.open = true; })); await p.type('#newLang', 'sv'); await p.keyboard.press('Enter'); await wait(400);
   await p.evaluate(() => { const t=[...document.querySelectorAll('#panelTabs button')].find(b=>b.textContent==='全体の設定'); t.click(); }); await wait(200);
-  await p.type('#newLang', 'en'); await p.keyboard.press('Enter'); await wait(300);
+  await p.evaluate(() => document.querySelectorAll('.lang-other').forEach((d) => { d.open = true; })); await p.type('#newLang', 'en'); await p.keyboard.press('Enter'); await wait(300);
   console.log('タブ:', await p.evaluate(() => [...document.querySelectorAll('#panelTabs button')].map(b=>b.textContent).join(' / ')));
   // fr の用語「and」を変えてみる
   await p.evaluate(() => { const t=[...document.querySelectorAll('#panelTabs button')].find(b=>b.textContent==='用語表'); t.click(); }); await wait(200);

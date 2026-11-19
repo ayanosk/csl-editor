@@ -53,7 +53,7 @@ function style({ mark = false, sortByLang = false } = {}) {
 const base = (id, lang, extra = {}) => Object.assign({
   id, type: 'book', title: `書名${id}`, publisher: '越後書房',
   issued: { 'date-parts': [[2024]] }, page: '45-67',
-  author: [{ family: '山田', given: '花子' }],
+  author: [{ family: '山本', given: '花子' }],
 }, lang === undefined ? {} : { language: lang }, extra);
 
 const items = [
@@ -65,8 +65,8 @@ const items = [
   base('en', 'en', { title: 'Numbers in the Archive.', author: [{ family: 'Dubois', given: 'Léa' }, { family: 'Moreau', given: 'Jules' }], publisher: 'Example UP' }),
   base('enUS', 'en-US', { title: 'A "Quoted" Title', author: [{ family: 'Smith', given: 'John Paul' }] }),
   // 仮説5：和名と欧名の混在。言語欄は en にしても和名は詰まるか
-  base('mixed', 'en', { title: 'Mixed', author: [{ family: '山田', given: '花子' }, { family: 'Smith', given: 'John' }] }),
-  base('kana', 'ja', { title: 'かな', author: [{ family: 'にいがた', given: 'はなこ' }, { family: 'ヤマダ', given: 'タロウ' }] }),
+  base('mixed', 'en', { title: 'Mixed', author: [{ family: '山本', given: '花子' }, { family: 'Smith', given: 'John' }] }),
+  base('kana', 'ja', { title: 'かな', author: [{ family: 'にいがた', given: 'はなこ' }, { family: 'ヤマモト', given: 'タロウ' }] }),
 ];
 
 function run(opts, fmt = 'text') {

@@ -356,7 +356,7 @@
       const delim = cg ? getAttr(cg, 'delimiter') || '' : '';
       c.opt.labelSpace = (getAttr(first, 'suffix') || '') + delim + (getAttr(second, 'prefix') || '');
       if (getAttr(labelLeaf.el, 'strip-periods') === 'true') c.opt.stripPeriods = true;
-    } else if (f === 'locator' || f === 'page' || f === 'page-first' || f === 'number' || f === 'volume' || f === 'issue' || f === 'edition') {
+    } else if (f === 'locator' || f === 'page' || f === 'page-first' || f === 'number' || f === 'volume' || f === 'number-of-volumes' || f === 'issue' || f === 'edition') {
       c.opt.label = 'none';
     }
     c.prefix = pre; c.suffix = suf;

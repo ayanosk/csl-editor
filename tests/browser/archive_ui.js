@@ -1,11 +1,12 @@
 // 一次史料の部品・原稿のタブ・項目の内容をコピーする・プレビューの再読み込み。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const b = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
   const p = await b.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('dialog', (d) => d.accept());
   await p.setViewport({ width: 1400, height: 1100 });
   await p.goto('file://' + html); await wait(600);
+  await toStarter(p);
   await p.evaluate(() => document.querySelector('#starterList button').click()); await wait(400);
   const bad = [];
   const expect = (ok, what) => { console.log(`${ok ? 'OK' : 'NG'} ${what}`); if (!ok) bad.push(what); };

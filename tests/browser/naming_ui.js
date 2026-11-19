@@ -1,5 +1,5 @@
 // 読み込んだ .csl の名前の規則：ファイル名＋_edited。重ねない、言語の印を外す、名前が変わるときだけ ID を振り直す。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs'), path = require('path');
 const [html, sp] = process.argv.slice(2);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -12,10 +12,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dl });
   await p.goto('file://' + html); await wait(500);
   await p.evaluate(() => localStorage.clear()); await p.reload(); await wait(500);
+  await toStarter(p);
   await p.evaluate(() => document.querySelectorAll('#starterList button')[0].click()); await wait(300);
   const cur = () => p.evaluate(() => ({ title: document.getElementById('styleTitle').value, id: CSLApp.state.model.info.id }));
   const load = async (file) => {
     await p.click('#btnStarter'); await wait(200);
+    await toStarter(p);
     const [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnDlgLoadCsl')]);
     await fc.accept([path.join(dl, file)]); await wait(500);
     return cur();

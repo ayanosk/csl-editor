@@ -18,6 +18,9 @@ for (const k of Object.keys(STARTERS)) {
   // コメントの中に -- が無いこと（XML の規則）
   const comment = xml.match(/<!--([\s\S]*?)-->/)[1];
   assert(!comment.includes('--'), 'コメントに -- がある');
+  // 番号形式でない型は、参考文献をぶら下げで書き出す
+  const hang = /<bibliography[^>]* hanging-indent="true"/.test(xml);
+  assert.strictEqual(hang, m.kind !== 'numeric', `ぶら下げの指定: ${k}`);
   n++;
   if (process.argv[2]) fs.writeFileSync(path.join(process.argv[2], `test_${k}.csl`), xml);
 }
@@ -29,6 +32,6 @@ m.systems.ja.bib.book[2].suffix = '">';
 const r = render(m);
 const book = r.bib.find(([id]) => id === 's-ja-book-1')[1];
 // 対になった直線の引用符 "q" は、citeproc-js が組版用の “q” に替える（エンジンの決まった動き）。
-assert.strictEqual(book, 'A&B <x> “q” & <山田花子">『デジタル史料学入門』越後書房、2024年。', book);
+assert.strictEqual(book, 'A&B <x> “q” & <山本花子">『デジタル史料学入門』越後書房、2024年。', book);
 n++;
 console.log(`OK ${n}件`);
