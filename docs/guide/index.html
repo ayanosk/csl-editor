@@ -91,6 +91,7 @@ footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--line); c
         <li><a href="#chips-screen">画面の見方</a></li>
         <li><a href="#chip-edit">チップを直す</a></li>
         <li><a href="#group">区切りとまとまり</a></li>
+        <li><a href="#archive">一次史料の書式を作る</a></li>
         <li><a href="#lang">和文と欧文</a></li>
         <li><a href="#rebuild">大幅修正：公式のスタイルを部品に移す</a></li>
       </ol>
@@ -196,6 +197,26 @@ footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--line); c
   <li>Zotero で公開されているスタイルも、同じしくみ（CSL の group）で空の欄を処理している</li>
 </ul>
 
+<h3 id="archive">一次史料の書式を作る <span class="note">（v0.4.0 から）</span></h3>
+<ul>
+  <li><b>種類を足す</b>：「項目の種類を選ぶ」で「原稿」「文書」「手紙・電子メール…」にチェックを入れると、その種類のタブができる。注形式の型では、所蔵の情報を含む並びから始まる</li>
+  <li><b>一次史料の部品</b>：所蔵機関・所蔵場所（文書群・番号）・所蔵機関の所在地・請求記号・資料の種類・文書番号・宛先。Zotero の「所蔵機関（Archive）」「所蔵場所（Loc. in Archive）」「請求記号（Call Number）」「種類（Type）」「受取人」の欄から組む</li>
+</ul>
+<p class="str">長岡三郎書状（山田太郎宛）「年貢上納につき」1789年3月5日（山田家文書 12-4、越後史料館所蔵）。<br>Moreau, Jules. Letter to Léa Dubois, March 5, 1761. Fonds Moreau, carton 3, no. 27, Bibliothèque municipale, Montclair.</p>
+<ul>
+  <li>所蔵の部分を〔 〕でまとめ、前後に（ ）を付けると、所蔵の欄が空の史料で空の括弧が残らない</li>
+  <li>Zotero の種類は増やせない。合う種類が無い史料は、いちばん近い種類（原稿・文書など）で入れる</li>
+  <li>参考文献・注（初出）・注（2回目以降）・注（直前と同じ文書）の並びは、「項目の内容をコピーする」で、ほかの場所から写せる</li>
+</ul>
+
+<h3 id="volumes">多巻本の総巻数 <span class="note">（v0.4.0 から）</span></h3>
+<ul>
+  <li>部品「総巻数」は、Zotero の「巻数（# of Volumes）」の欄から組む。用語を後ろに付け、前に「全」を置くと「全5巻」になる</li>
+  <li>欧文の用語は数で変わる（1 vol.・5 vols.）。用語表の「巻（1巻）」「巻（複数。総巻数にも）」で直せる</li>
+  <li>公式のスタイルの大幅修正では、総巻数の書き方は移らない。移したあとで部品を足す</li>
+</ul>
+<p class="str">東京大学史料編纂所『大日本古文書』東京大学出版会、1901年、全5巻。<br>Moreau, Jules. <i>The Academy Papers</i>. 5 vols. Example Press, 1901.</p>
+
 <h3 id="lang">和文と欧文：Zotero の「言語」欄で決まる</h3>
 <div class="table-wrap">
 <table>
@@ -221,6 +242,7 @@ footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--line); c
     <p><span class="num">2</span>帯に、もとにしたスタイルと、見本の出力が元のスタイルと同じ件数が出る。違う見本は一覧で出る</p>
     <ul>
       <li><b>欧文の書式</b>が元のスタイル</li>
+      <li>元のスタイルが種類ごとに書き分けていれば（Chicago の原稿・手紙・学位論文など）、その種類のタブに移る</li>
       <li><b>和文の書式</b>を足して、多言語版にできる</li>
       <li>操作は「型から組む」と同じ</li>
     </ul>
@@ -332,7 +354,10 @@ footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--line); c
 
 <h2 id="limits">できないこと・気をつけること</h2>
 <ul>
-  <li><b>読みの欄を持つこと</b>：Zotero と CSL には読みの欄が無い。五十音順は、上の<a href="#sort">Extra 欄の代用</a>で並べる。読みの欄を持てる Zotero の派生版 Jurism もある</li>
+  <li><b>読み（フリガナ）の欄を持つこと</b>：Zotero と CSL には読みの欄が無い。五十音順は、上の<a href="#sort">Extra 欄の代用</a>で並べる。読みの欄を持てる Zotero の派生版 Jurism もある</li>
+  <li><b>発行年を漢数字にすること</b>（二〇二四年、令和六年など）：CSL の日付は漢数字にできない。巻・総巻数・号・頁・版・引用箇所は、全体の設定で漢数字にできる。発行年を漢数字や和暦にするには、Zotero の日付欄にそのまま書く</li>
+  <li><b>項目の種類を自由に増やすこと</b>：Zotero の種類も CSL の種類も決まった一覧で、利用者は足せない。合う種類が無い史料は、いちばん近い種類（原稿・文書など）で入れる。Zotero の「その他（Extra）」欄に <code>Type: classic</code> のように書くと、CSL の種類だけを変えられる（このアプリで選べるのは Zotero にある種類だけ）</li>
+  <li><b>欄の有無による書き分けを、大幅修正で移すこと</b>：1つのタブで移せるのは1通りの書き方だけ。たとえば Chicago は題名のある書簡と無い書簡を書き分けるが、題名の無い形だけが移る</li>
   <li><b>規定どおりかの保証</b>：4つの型は出発点。提出先の規定と見比べて確かめる</li>
   <li><b>Zotero との細部の一致</b>：組版エンジンは、Zotero が中で使っているのと同じ版の citeproc-js。ただし Zotero 側で手が入っているので、細かい出力が違うことがある。最後は Zotero で確かめる</li>
   <li><b>多言語版は Zotero 向け</b>：多言語版は CSL の拡張（CSL-M）を使う。標準の CSL しか読まないソフトでは、「言語別に書き出す」を使う</li>

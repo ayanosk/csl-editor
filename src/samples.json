@@ -766,5 +766,108 @@
         ]
       ]
     }
+  },
+  {
+    "id": "s-ja-manuscript-1",
+    "type": "manuscript",
+    "language": "ja",
+    "title": "蒲原郡新田村検地帳",
+    "genre": "検地帳",
+    "issued": {
+      "date-parts": [
+        [
+          1688,
+          8
+        ]
+      ]
+    },
+    "archive": "越後史料館",
+    "archive_location": "新田村庄屋文書 3-12",
+    "note": "かんばらぐん しんでんむら けんちちょう"
+  },
+  {
+    "id": "s-ja-letter-1",
+    "type": "personal_communication",
+    "language": "ja",
+    "title": "年貢上納につき",
+    "genre": "書状",
+    "author": [
+      {
+        "family": "長岡",
+        "given": "三郎"
+      }
+    ],
+    "recipient": [
+      {
+        "family": "山田",
+        "given": "太郎"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          1789,
+          3,
+          5
+        ]
+      ]
+    },
+    "archive": "越後史料館",
+    "archive_location": "山田家文書 12-4",
+    "note": "ながおか さぶろう"
+  },
+  {
+    "id": "s-fr-manuscript-1",
+    "type": "manuscript",
+    "language": "fr",
+    "title": "Mémoire sur les manufactures de soie",
+    "genre": "mémoire",
+    "author": [
+      {
+        "family": "Dubois",
+        "given": "Léa"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          1752
+        ]
+      ]
+    },
+    "archive": "Bibliothèque municipale",
+    "archive-place": "Montclair",
+    "archive_location": "Fonds Moreau, carton 3",
+    "call-number": "MS 412"
+  },
+  {
+    "id": "s-en-letter-1",
+    "type": "personal_communication",
+    "language": "en",
+    "genre": "letter",
+    "author": [
+      {
+        "family": "Moreau",
+        "given": "Jules"
+      }
+    ],
+    "recipient": [
+      {
+        "family": "Dubois",
+        "given": "Léa"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          1761,
+          3,
+          5
+        ]
+      ]
+    },
+    "archive": "Bibliothèque municipale",
+    "archive-place": "Montclair",
+    "archive_location": "Fonds Moreau, carton 3, no. 27"
   }
 ]

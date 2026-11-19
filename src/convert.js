@@ -40,16 +40,64 @@
     return 'numeric';
   }
 
-  // 見本：種類ごとに1件（著者2名）。「その他」は報告書を組む。比べるための相手（other）も置く。
-  const OTHER_ITEM = { id: 'cv-other', type: 'report', language: 'en', title: 'Counting the Parish', author: [{ family: 'Dubois', given: 'Léa' }, { family: 'Moreau', given: 'Jules' }], publisher: 'Example Institute', 'publisher-place': 'Paris', issued: { 'date-parts': [[2018]] } };
+  // 見本：種類ごとに1件（著者2名）。「その他」は、どの種類にも当たらない pamphlet で組む（報告書などを書き分けるスタイルがあるため）。
+  const OTHER_ITEM = { id: 'cv-other', type: 'pamphlet', language: 'en', title: 'Counting the Parish', author: [{ family: 'Dubois', given: 'Léa' }, { family: 'Moreau', given: 'Jules' }], publisher: 'Example Institute', 'publisher-place': 'Paris', issued: { 'date-parts': [[2018]] } };
   const PICK = { book: 's-en-book-2', chapter: 's-en-chapter-2', article: 's-en-article-2', web: 's-en-web-2' };
   function samplesFor(items) {
     const out = {};
     for (const [tab, id] of Object.entries(PICK)) { const it = items.find((x) => x.id === id); if (it) out[tab] = it; }
     // 雑誌論文には DOI を足して組む（見本に無い欄は部品に移らないため。DOI の無い文献では、その部品は消える）
     if (out.article) out.article = { ...out.article, DOI: out.article.DOI || '10.1234/example.2021.4' };
-    out.other = OTHER_ITEM;
+    // 図書・本の章・その他には URL を足す（同じ書き方の種類の文献に URL があると、その部品が要る）。
+    // DOI は足さない（Chicago などは DOI があれば URL を出さないので、URL の部品が移らなくなる）。
+    for (const k of ['book', 'chapter']) if (out[k]) out[k] = { URL: 'https://example.org/records', ...out[k] };
+    out.other = { ...OTHER_ITEM, genre: 'memorandum', number: '27', URL: 'https://example.org/records' };
     return out;
+  }
+
+  // ---- 種類ごとの書き分け --------------------------------------------------------------
+  // 元のスタイルが種類ごとに書き分けているかを、試しの文献で確かめる。同じ欄を入れた文献を、その種類と、
+  // いま入るタブの種類（図書・本の章・雑誌論文・ウェブページ。どれでもなければ pamphlet）として組み、
+  // 部品の並びが違えば、その種類のタブを足す。欄は、その種類で Zotero に入っていそうなもの（入っていない欄は部品に移らない）。
+  const REP = { book: 'book', chapter: 'chapter', article: 'article-journal', web: 'webpage', other: 'pamphlet' };
+  const PROBE_FIELDS = {
+    pub: { publisher: 'Example Press', 'publisher-place': 'Paris' },
+    container: { 'container-title': 'Annals of the Parish' },
+    editor: { editor: [{ family: 'Laurent', given: 'Claire' }] },
+    page: { page: '45-67' },
+    vol: { volume: '12', issue: '3' },
+    doi: { DOI: '10.1234/probe' },
+    genre: { genre: 'memorandum' },
+    number: { number: '27' },
+    archive: { archive: 'Municipal Library', archive_location: 'Moreau Papers, box 3', 'archive-place': 'Montclair', 'call-number': 'MS 412' },
+    recipient: { recipient: [{ family: 'Girard', given: 'Paul' }] },
+  };
+  const PROBE_OF = {
+    'paper-conference': ['container', 'editor', 'pub', 'page'], 'article-magazine': ['container', 'vol', 'page'], 'article-newspaper': ['container', 'page'],
+    'post-weblog': ['container'], post: ['container'], thesis: ['genre', 'pub'], report: ['genre', 'number', 'pub'],
+    manuscript: ['genre', 'archive'], personal_communication: ['genre', 'recipient', 'archive'], document: ['pub', 'archive'],
+    'entry-encyclopedia': ['container', 'editor', 'pub', 'vol', 'page'], 'entry-dictionary': ['container', 'editor', 'pub', 'vol', 'page'],
+    map: ['genre', 'pub', 'archive'], graphic: ['genre', 'archive'], article: ['pub', 'number', 'doi'], speech: ['genre', 'pub'],
+    interview: ['genre', 'archive'], motion_picture: ['genre', 'pub'], song: ['genre', 'container', 'pub'], broadcast: ['container', 'number', 'pub'],
+    software: ['genre', 'pub'], dataset: ['genre', 'pub', 'number', 'doi'], standard: ['pub', 'number'], patent: ['number', 'pub'],
+    legislation: ['container', 'number', 'vol', 'page'], bill: ['container', 'number', 'vol', 'page'], hearing: ['container', 'number', 'pub', 'page'],
+    legal_case: ['container', 'vol', 'page'],
+  };
+  // 試しの文献。年は1件ずつ変える（同じ著者・同じ年だと、著者年形式で 2018a・2018b の添え字が付くため）。
+  function probeItem(fieldsOf, type, k) {
+    const it = { id: `cv-probe-${k}`, type, language: 'en', title: 'Records of the Parish', author: [{ family: 'Dubois', given: 'Léa' }, { family: 'Moreau', given: 'Jules' }], issued: { 'date-parts': [[1801 + k, 3, 5]] }, URL: 'https://example.org/records' };
+    for (const f of PROBE_OF[fieldsOf] || []) Object.assign(it, PROBE_FIELDS[f]);
+    // 手紙は題名を入れないことが多い（Chicago は題名の無い手紙を「letter to 宛先」と組む）
+    if (fieldsOf === 'personal_communication') delete it.title;
+    return it;
+  }
+  // 試す種類：Zotero の種類のうち、既定の4つのタブの代表（図書・本の章・雑誌論文・ウェブページ）でないもの。
+  // { type, it: その種類として組む文献, ref: 同じ欄で、いま入るタブの種類として組む文献 }
+  function probesFor() {
+    const reps = Object.values(REP);
+    let k = 0;
+    return G.CSL_TYPES.map((t) => t.type).filter((t) => !reps.includes(t))
+      .map((type) => ({ type, it: probeItem(type, type, k++), ref: probeItem(type, REP[G.tabOfType(type, null)], k++) }));
   }
 
   // ---- 組む（参考文献・注・2回目以降・直前と同じ文書） ------------------------------------
@@ -67,18 +115,20 @@
     const bib = {};
     if (/<bibliography[\s>]/.test(xml)) {
       const r = e.makeBibliography();
-      if (r) r[0].entry_ids.forEach((ids, k) => { bib[ids[0]] = r[1][k].replace(/^\s*<div class="csl-entry">/, '').replace(/<\/div>\s*$/, '').trim(); });
+      if (r) for (const [id, html] of Object.entries(O.bibEntries(r))) bib[id] = html.replace(/^\s*<div class="csl-entry">/, '').replace(/<\/div>\s*$/, '').trim();
     }
+    // 注は文献ごとに、注の列をはじめから組み直す（rebuildProcessorState は状態を作り直すので、同じエンジンを使い回せる）。
+    // エンジンを作るのは重い（大きなスタイルで1回数秒）ので、1つだけ作る。
     for (const it of items) {
       const other = items.find((x) => x.id !== it.id).id;
       const o = { bib: bib[it.id] || '' };
       if (note) {
         const seq = [[it.id, '42'], [it.id, '45'], [other, '10'], [it.id, '50']];
         const cits = seq.map(([x, v], k) => ({ citationID: 'q' + k, citationItems: [{ id: x, locator: v, label: 'page' }], properties: { noteIndex: k + 1 } }));
-        const res = Object.fromEntries(mk().rebuildProcessorState(cits, 'html').map(([cid, , s]) => [cid, s]));
+        const res = Object.fromEntries(e.rebuildProcessorState(cits, 'html').map(([cid, , s]) => [cid, s]));
         Object.assign(o, { cite: res.q0, citeIbid: res.q1, citeSub: res.q3 });
       } else {
-        o.cite = mk().makeCitationCluster([{ id: it.id, locator: '42', label: 'page' }]);
+        o.cite = e.makeCitationCluster([{ id: it.id, locator: '42', label: 'page' }]);
       }
       out[it.id] = o;
     }
@@ -166,6 +216,8 @@
       if (el.tag === 'text' && getAttr(el, 'macro') === undefined) { out.push({ lit: n.toks.map((t) => t.ch).join(''), term: true, el }); continue; }
       // まとまり（group・マクロの呼び出し・layout）：中を平らにしてから、部品の数で扱いを決める
       const inner = flatten(nest(n.toks, n.depth + 1), byOrd);
+      // マクロを呼ぶ要素の text-case="capitalize-first"（Chicago の「Memorandum」）は、中の最初の部品の頭を大文字にする
+      if (getAttr(el, 'text-case') === 'capitalize-first') { const first = inner.find((x) => x.field || x.grp); if (first) markCaps(first); }
       const vars = new Set(inner.flatMap(allVars));
       if (vars.size === 0) { out.push({ lit: inner.map(litText).join(''), term: true, el }); continue; }
       if (vars.size === 1) {
@@ -175,7 +227,7 @@
         let mid = inner.slice(k0, k1 + 1), p0 = pre, s0 = suf;
         // 入れ子の「部品1つのまとまり」は、内側の前後の文字も足し合わせる（(年) の括弧など）
         while (mid.length === 1 && mid[0].parts) { p0 += mid[0].pre || ''; s0 = (mid[0].suf || '') + s0; mid = mid[0].parts; }
-        out.push({ field: [...vars][0], parts: mid, pre: p0, suf: s0 });
+        out.push({ field: [...vars][0], parts: mid, pre: p0, suf: s0, capsFirst: inner.some((x) => x.capsFirst) });
         continue;
       }
       // 部品2つ以上：前後に文字があれば〔 〕のまとまり
@@ -188,6 +240,7 @@
     }
     return out;
   }
+  function markCaps(x) { if (x.grp) { const f = x.grp.find((y) => y.field || y.grp); if (f) markCaps(f); } else x.capsFirst = true; }
   function leafText(x) { return x.toks ? x.toks.map((t) => t.ch).join('') : (x.parts || x.grp || []).map(leafText).join(''); }
   function allVars(x) { return x.field ? [x.field] : x.grp ? x.grp.flatMap(allVars) : x.parts ? x.parts.flatMap(allVars) : []; }
   function litText(x) { return x.lit !== undefined ? x.lit : ''; }
@@ -216,9 +269,9 @@
       if (x.grp) {
         const inner = chipsOf(x.grp, report);
         if (!inner.length) continue;
-        if (chips.length && pending) chips.push(S(pending));
+        if (chips.length && (pending || moved)) chips.push(S(moved && !pending.startsWith(moved) ? moved + pending : pending));
         else if (!chips.length && (lead || pending)) inner[0].prefix = lead + pending + (inner[0].prefix || '');
-        lead = ''; pending = '';
+        lead = ''; pending = ''; moved = '';
         chips.push({ t: 'open', prefix: x.prefix }, ...inner, { t: 'close', suffix: x.suffix });
         continue;
       }
@@ -228,7 +281,12 @@
       if (c && c.wrap === 'dquote') {
         const txt = leafText(x);
         const m = txt.match(/([,.;:!?])\s*[”"]\s*$/);
-        if (m && !(c.suffix || '').includes(m[1])) moved = m[1];
+        // 句読点の後ろの空白が部品の後ろの文字に入っていたら、句読点はその部品のまとまりの後ろの文字だったもの。
+        // 部品の後ろの文字に戻す（IEEE の “Title.” Press。題名の無い文献では、句読点も一緒に消える）
+        if (m && !(c.suffix || '').includes(m[1])) {
+          if (/^\s+$/.test(c.suffix || '')) c.suffix = m[1] + c.suffix;
+          else moved = m[1];
+        }
       }
     }
     // 並びの最後の文字（文末の「.」など）は、どの部品が最後に来ても付くように、並び全体をまとまりで囲んだ後ろの文字にする。
@@ -273,7 +331,8 @@
     const vt = valueLeaf ? valueLeaf.toks : toks;
     if (vt.length && vt.filter((t) => t.i).length * 2 > vt.length) c.italic = true;
     if (el && getAttr(el, 'quotes') === 'true') c.wrap = 'dquote';
-    if (el && getAttr(el, 'text-case') === 'capitalize-first') c.caps = 'capitalize-first';
+    if ((el && getAttr(el, 'text-case') === 'capitalize-first') || x.capsFirst) c.caps = 'capitalize-first';
+    if (el && getAttr(el, 'text-case') === 'title') c.caps = 'title';
     const def = G.FIELDS[f];
     if (def.kind === 'names' && el) namesOpt(el, c, cur.place, cur.tree);
     if (def.kind === 'date' && el) {
@@ -297,7 +356,7 @@
       const delim = cg ? getAttr(cg, 'delimiter') || '' : '';
       c.opt.labelSpace = (getAttr(first, 'suffix') || '') + delim + (getAttr(second, 'prefix') || '');
       if (getAttr(labelLeaf.el, 'strip-periods') === 'true') c.opt.stripPeriods = true;
-    } else if (f === 'locator' || f === 'page' || f === 'volume' || f === 'issue' || f === 'edition') {
+    } else if (f === 'locator' || f === 'page' || f === 'page-first' || f === 'number' || f === 'volume' || f === 'number-of-volumes' || f === 'issue' || f === 'edition') {
       c.opt.label = 'none';
     }
     c.prefix = pre; c.suffix = suf;
@@ -394,12 +453,14 @@
     const tree = O.parse(xmlRead);
     const byOrd = O.index(tree);
     const samples = samplesFor(items);
-    const its = Object.values(samples);
+    const probes = probesFor();
+    const its = Object.values(samples).concat(probes.flatMap((x) => [x.it, x.ref]));
     const clean = renderAll(CSL, xmlRead, its, retrieveLocale, note);
     const marked = renderAll(CSL, O.serialize(O.instrument(tree)), its, retrieveLocale, note);
     const places = note ? ['bib', 'cite', 'citeSub', 'citeIbid'] : ['bib', 'cite'];
-    const en = { bib: {}, cite: {}, citeSub: {}, citeIbid: {} };
-    for (const [tab, it] of Object.entries(samples)) {
+    // 1件の文献の、書く場所ごとの部品の並び
+    const chainsOf = (it, rep) => {
+      const o = {};
       for (const p of places) {
         const toks = tokens(clean[it.id][p] || '', marked[it.id][p] || '');
         // 一番外（layout）の文字（前後の文字・区切り）は、書式全体の設定に回すので外す
@@ -407,8 +468,24 @@
         const body = top.filter((x) => x.ord !== undefined && byOrd[x.ord] && byOrd[x.ord].tag === 'layout').flatMap((x) => x.toks.filter((t) => t.path.length > 1));
         Object.assign(cur, { item: it, place: p, tree });
         const flat = flatten(nest(body, 1), byOrd);
-        en[p][tab] = endPunct(chipsOf(flat, report));
+        o[p] = endPunct(chipsOf(flat, rep));
       }
+      return o;
+    };
+    const en = { bib: {}, cite: {}, citeSub: {}, citeIbid: {} };
+    for (const [tab, it] of Object.entries(samples)) {
+      const o = chainsOf(it, report);
+      for (const p of places) en[p][tab] = o[p];
+    }
+    // 元のスタイルが書き分けている種類は、その種類のタブにする（移せなかった変数は、足したタブの分だけ報告する）
+    const typeTabs = [];
+    for (const { type, it, ref } of probes) {
+      const own = { dropped: new Set() };
+      const a = chainsOf(it, own), b = chainsOf(ref, { dropped: new Set() });
+      if (JSON.stringify(a) === JSON.stringify(b)) continue;
+      typeTabs.push(type);
+      for (const p of places) en[p]['x-' + type] = a[p];
+      own.dropped.forEach((v) => report.dropped.add(v));
     }
     // 書式全体の設定
     const starter = STARTER_OF[kind] || 'chicago';
@@ -419,6 +496,18 @@
     sys.bib = en.bib; sys.cite = en.cite;
     if (note) { sys.citeSub = en.citeSub; sys.citeIbid = en.citeIbid; m.subsequent = true; }
     settleNames(sys, places);
+    // 足した種類のタブ。和文の書式（型の並び）には、原稿・文書・手紙なら一次史料の並びを、ほかは元のタブの並びを写す。
+    m.typeTabs = typeTabs;
+    for (const [sk, s] of Object.entries(m.systems)) {
+      if (sk === 'en') continue;
+      for (const tg of ST.TARGETS) {
+        if (!s[tg]) continue;
+        for (const type of typeTabs) {
+          const preset = note && (tg === 'bib' || tg === 'cite') ? ST.archivePreset(sk, type, tg) : null;
+          s[tg]['x-' + type] = preset || JSON.parse(JSON.stringify(s[tg][G.tabOfType(type, null)] || []));
+        }
+      }
+    }
     sys.layout = { bib: { prefix: bl ? getAttr(bl, 'prefix') || '' : '', suffix: bl ? getAttr(bl, 'suffix') || '' : '' }, cite: { suffix: note && cl ? getAttr(cl, 'suffix') || '' : '' } };
     if (!note && cl) m.citeLayout = { prefix: getAttr(cl, 'prefix') || '', suffix: getAttr(cl, 'suffix') || '', delimiter: getAttr(cl, 'delimiter') || '' };
     // 元のスタイルの作者・ライセンス・ID（書き出しで保つ）
@@ -449,8 +538,9 @@
     if (m.bibAttrs['second-field-align']) { delete m.bibAttrs['second-field-align']; report.dropped.add('second-field-align'); }
     m.citeAttrs = keep(child(style, 'citation'));
     m.source = { kind: 'official', title: O.titleOf(xml), locales, ...info };
-    // 組み直して、見本ごとに元の出力と比べる
-    const checks = compare(CSL, xml, m, items.filter((i) => i.language === 'en').concat([OTHER_ITEM]), retrieveLocale, note);
+    // 組み直して、見本ごとに元の出力と比べる。見本の欧文の文献と、足した種類の試しの文献。
+    const added = probes.filter((x) => typeTabs.includes(x.type)).map((x) => x.it);
+    const checks = compare(CSL, xml, m, items.filter((i) => i.language === 'en').concat(added, [OTHER_ITEM]), retrieveLocale, note);
     return { model: m, kind, starter, report: { dropped: [...report.dropped], checks } };
   }
 
@@ -469,7 +559,7 @@
     return out;
   }
 
-  const api = { convert };
+  const api = { probesFor, convert };
   if (isNode) module.exports = api;
   else root.CSLConvert = api;
 })(typeof window !== 'undefined' ? window : this);

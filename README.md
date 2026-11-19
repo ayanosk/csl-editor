@@ -59,6 +59,8 @@ node tests/locator.js             # 引用箇所（頁・章・節）の組み�
 node tests/official.js            # 公式のスタイルの手直し（書き戻し・文字の対応・編集の効き目・書き出し）
 node tests/convert.js             # 公式のスタイルを部品に移す（大幅修正）：組み直した出力が元と同じか
 node tests/reading_sort.js        # 読みで五十音順に並べる（Extra 欄の1行目。欧文は著者名）
+node tests/archive.js             # 一次史料の部品：原稿・文書・手紙のタブを足したときの並び
+node tests/volumes.js             # 総巻数の部品（全5巻・5 vols.）と、用語「巻（複数）」の補い
 bash tests/browser/run_all.sh     # ヘッドレスの Chrome で画面を操作する検証
 ```
 

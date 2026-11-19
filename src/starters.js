@@ -16,14 +16,16 @@
   const EN_NAMES = { delimiter: ', ', and: 'text', precedesLast: 'contextual', precedesLastInverted: 'always', precedesEtAl: 'never', etAlMin: 11, etAlUseFirst: 7, initialize: false, initializeWith: '. ', sortSeparator: ', ', roleAfterPrefix: ', ', roleBeforeSuffix: ' ', substituteRole: 'after' };
 
   const TERMS_JA = {
-    page: '頁', pages: '頁', volume: '巻', issue: '号', edition: '版',
+    page: '頁', pages: '頁', volume: '巻', volumes: '巻', issue: '号', edition: '版',
     editor: '編', editors: '編', 'editor-verb': '編', translator: '訳', translators: '訳', 'translator-verb': '訳',
     'et-al': 'ほか', and: '・', accessed: '参照', 'page-range-delimiter': '-',
+    recipient: '宛', 'recipient-verb': '宛', number: '号',
   };
   const TERMS_EN = {
-    page: 'p.', pages: 'pp.', volume: 'vol.', issue: 'no.', edition: 'ed.',
+    page: 'p.', pages: 'pp.', volume: 'vol.', volumes: 'vols.', issue: 'no.', edition: 'ed.',
     editor: 'ed.', editors: 'eds.', 'editor-verb': 'edited by', translator: 'trans.', translators: 'trans.', 'translator-verb': 'translated by',
     'et-al': 'et al.', and: 'and', accessed: 'accessed', 'page-range-delimiter': '–',
+    recipient: 'to', 'recipient-verb': 'to', number: 'no.',
   };
 
   // ---- 和文：注形式（Chicago・MLA・IEEE の参考文献もこの形） ----
@@ -198,6 +200,8 @@
     m.extraLangs = [];
     if (m.kind === 'note') { m.subsequent = true; ensureSubsequent(m); }
     m.sortByLanguage = m.kind !== 'numeric';
+    // 番号形式でない型は、参考文献をぶら下げで組む（Chicago・APA・MLA の決まり）
+    if (m.kind !== 'numeric') m.bibAttrs = { 'hanging-indent': 'true' };
     m.terms = { ja: { ...TERMS_JA }, en: { ...TERMS_EN } };
     if (key === 'apa') Object.assign(m.terms.en, { translator: 'Trans.', translators: 'Trans.', editor: 'Ed.', editors: 'Eds.' });
     if (key === 'ieee') Object.assign(m.terms.en, { editor: 'Ed.', editors: 'Eds.' });
@@ -256,10 +260,10 @@
   const BUNDLED_LOCALES = ['ja', 'en', 'fr', 'de', 'it', 'es', 'nl', 'pt', 'la', 'ru', 'zh', 'ko', 'ar', 'tr'];
   // 用語の初期値。ここに無い言語は英語の用語を写す。どれも足場で、学生が用語表で直す前提。
   const LANG_TERMS = {
-    fr: { page: 'p.', pages: 'p.', volume: 'vol.', issue: 'n°', edition: 'éd.', editor: 'éd.', editors: 'éd.', 'editor-verb': 'sous la direction de', translator: 'trad.', translators: 'trad.', 'translator-verb': 'traduit par', 'et-al': 'et al.', and: 'et', accessed: 'consulté le', 'page-range-delimiter': '-' },
-    de: { page: 'S.', pages: 'S.', volume: 'Bd.', issue: 'H.', edition: 'Aufl.', editor: 'Hrsg.', editors: 'Hrsg.', 'editor-verb': 'herausgegeben von', translator: 'Übers.', translators: 'Übers.', 'translator-verb': 'übersetzt von', 'et-al': 'u. a.', and: 'und', accessed: 'zugegriffen am', 'page-range-delimiter': '–' },
-    it: { page: 'p.', pages: 'pp.', volume: 'vol.', issue: 'n.', edition: 'ed.', editor: 'a cura di', editors: 'a cura di', 'editor-verb': 'a cura di', translator: 'trad.', translators: 'trad.', 'translator-verb': 'tradotto da', 'et-al': 'et al.', and: 'e', accessed: 'consultato il', 'page-range-delimiter': '-' },
-    es: { page: 'p.', pages: 'pp.', volume: 'vol.', issue: 'n.º', edition: 'ed.', editor: 'ed.', editors: 'eds.', 'editor-verb': 'editado por', translator: 'trad.', translators: 'trads.', 'translator-verb': 'traducido por', 'et-al': 'et al.', and: 'y', accessed: 'consultado el', 'page-range-delimiter': '-' },
+    fr: { page: 'p.', pages: 'p.', volume: 'vol.', volumes: 'vol.', issue: 'n°', edition: 'éd.', editor: 'éd.', editors: 'éd.', 'editor-verb': 'sous la direction de', translator: 'trad.', translators: 'trad.', 'translator-verb': 'traduit par', 'et-al': 'et al.', and: 'et', accessed: 'consulté le', 'page-range-delimiter': '-', recipient: 'à', 'recipient-verb': 'à', number: 'n°' },
+    de: { page: 'S.', pages: 'S.', volume: 'Bd.', volumes: 'Bde.', issue: 'H.', edition: 'Aufl.', editor: 'Hrsg.', editors: 'Hrsg.', 'editor-verb': 'herausgegeben von', translator: 'Übers.', translators: 'Übers.', 'translator-verb': 'übersetzt von', 'et-al': 'u. a.', and: 'und', accessed: 'zugegriffen am', 'page-range-delimiter': '–', recipient: 'an', 'recipient-verb': 'an', number: 'Nr.' },
+    it: { page: 'p.', pages: 'pp.', volume: 'vol.', volumes: 'voll.', issue: 'n.', edition: 'ed.', editor: 'a cura di', editors: 'a cura di', 'editor-verb': 'a cura di', translator: 'trad.', translators: 'trad.', 'translator-verb': 'tradotto da', 'et-al': 'et al.', and: 'e', accessed: 'consultato il', 'page-range-delimiter': '-', recipient: 'a', 'recipient-verb': 'a', number: 'n.' },
+    es: { page: 'p.', pages: 'pp.', volume: 'vol.', volumes: 'vols.', issue: 'n.º', edition: 'ed.', editor: 'ed.', editors: 'eds.', 'editor-verb': 'editado por', translator: 'trad.', translators: 'trads.', 'translator-verb': 'traducido por', 'et-al': 'et al.', and: 'y', accessed: 'consultado el', 'page-range-delimiter': '-', recipient: 'a', 'recipient-verb': 'a', number: 'n.º' },
   };
   function langName(k) { return k === 'ja' ? '和文' : k === 'en' ? '欧文' : (LANG_NAMES[k] || k); }
 
@@ -530,9 +534,44 @@
     model.systems[k] = sys;
     model.terms = model.terms || {};
     model.terms[k] = p ? { ...TERMS_EN, ...p.terms } : { ...TERMS_EN, ...(model.terms.en || {}), ...(LANG_TERMS[k] || {}) };
+    // 既定の書式の用語に複数の巻が無ければ、英語の vols. ではなく1巻の語を使う（中国語の「卷」など）
+    if (p && p.terms.volumes === undefined) model.terms[k].volumes = model.terms[k].volume;
     model.extraLangs.push(k);
     return null;
   }
+  // 後から足した用語（宛先・文書番号）を、それより前に作ったスタイルに補う。入っている値には触れない。
+  function fillTerms(model) {
+    model.terms = model.terms || {};
+    for (const [k, t] of Object.entries(model.terms)) {
+      const base = k === 'ja' ? TERMS_JA : { ...TERMS_EN, ...(LANG_TERMS[k] || {}) };
+      for (const key of ['recipient', 'recipient-verb', 'number']) if (t[key] === undefined) t[key] = base[key];
+      // 複数の巻は、1巻の語を初期値のまま使っていれば初期値の複数形に、直していればその語に揃える
+      if (t.volumes === undefined && t.volume !== undefined) t.volumes = t.volume === base.volume ? base.volumes : t.volume;
+    }
+  }
+
+  // ---- 一次史料の並び（注形式の型で、原稿・文書・書簡のタブを足したときの初期値） ----
+  // 和文：長岡三郎書状（山田太郎宛）「年貢上納につき」寛政元年三月五日（山田家文書12-4、越後史料館所蔵）
+  // 欧文：Jules Moreau, lettre to Léa Dubois, March 5, 1761, Correspondance, carton 3, Bibliothèque municipale, Montclair.
+  const ARCHIVE_JA = () => Grp([F('archive_location'), S('、'), F('call-number'), S('、'), F('archive', { suffix: '所蔵' })], '（', '）');
+  const ARCHIVE_EN = () => [F('archive_location'), S(', '), F('call-number'), S(', '), F('archive'), S(', '), F('archive-place')];
+  function archivePreset(sysKey, type, target) {
+    if (!['manuscript', 'document', 'personal_communication'].includes(type)) return null;
+    const letter = type === 'personal_communication';
+    if (sysKey === 'ja') {
+      return [F('author'), ...(letter ? [F('genre'), F('recipient', { prefix: '（', suffix: '）', opt: { role: 'after' } })] : []),
+        F('title', { wrap: 'kagi' }), ...(letter ? [] : [F('genre', { prefix: '（', suffix: '）' })]),
+        F('issued', { opt: { form: 'ymd' } }), F('number', { opt: { label: 'after' } }), ...ARCHIVE_JA()];
+    }
+    const bib = target === 'bib';
+    const author = F('author', bib ? { opt: { order: 'family' } } : {});
+    const sep = bib ? '. ' : ', ';
+    const head = letter
+      ? [author, S(sep), ...Grp([F('genre', { caps: 'capitalize-first' }), S(' '), F('recipient', { opt: { role: 'before', roleForm: 'verb' } })]), S(', '), F('issued', { opt: { form: 'ymd' } })]
+      : [author, S(sep), F('title', { wrap: 'dquote' }), S(sep), F('genre', { caps: 'capitalize-first' }), S(', '), F('issued', { opt: { form: 'ymd' } }), S(', '), F('number', { opt: { label: 'before' } })];
+    return [...head, S(sep), ...ARCHIVE_EN()];
+  }
+
   function removeLanguage(model, key) {
     model.extraLangs = (model.extraLangs || []).filter((k) => k !== key);
     if (key !== 'ja' && key !== 'en') {
@@ -541,7 +580,7 @@
     }
   }
 
-  const api = { STARTERS, makeStarter, F, S, Grp, TARGETS, ensureSubsequent, subPreset, LANG_NAMES, BUNDLED_LOCALES, LANG_PRESETS, langName, addLanguage, removeLanguage };
+  const api = { STARTERS, makeStarter, F, S, Grp, TARGETS, ensureSubsequent, fillTerms, archivePreset, subPreset, LANG_NAMES, BUNDLED_LOCALES, LANG_PRESETS, langName, addLanguage, removeLanguage };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CSLStarters = api;
 })(typeof self !== 'undefined' ? self : this);

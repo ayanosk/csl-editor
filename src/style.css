@@ -186,6 +186,8 @@ table.terms input { width: 100%; }
 /* 注の見本の行は、名前の下に引いた箇所（42頁など）を添える */
 .out .k .at { display: block; white-space: nowrap; }
 .out .v { overflow-wrap: anywhere; }
+/* 参考文献のぶら下げ（全体の設定 → 参考文献の字下げ） */
+.out .v.hanging, .bib-order.hanging li { padding-inline-start: 2em; text-indent: -2em; }
 .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 5px; padding: 3px 8px; font-size: 12px; margin-top: 4px; }
 .error { background: var(--err-bg); color: var(--err-ink); border-radius: 6px; padding: 6px 10px; font-size: 12px; white-space: pre-wrap; }
 
@@ -273,6 +275,10 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
 .off-actions .danger { color: var(--err-ink); }
 .off-edits { list-style: none; padding: 0; margin: 4px 0 8px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
 .off-edits li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* 項目の内容をコピーする（書く場所の切り替えの下） */
+.copy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; font-size: 13px; }
+.copy-row .lbl { color: var(--muted, #666); margin-right: 4px; }
 
 /* 言語ごとの既定の書式を選ぶ一覧 */
 .preset-list { display: grid; gap: 6px; margin: 4px 0 8px; }

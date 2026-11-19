@@ -18,6 +18,9 @@ for (const k of Object.keys(STARTERS)) {
   // コメントの中に -- が無いこと（XML の規則）
   const comment = xml.match(/<!--([\s\S]*?)-->/)[1];
   assert(!comment.includes('--'), 'コメントに -- がある');
+  // 番号形式でない型は、参考文献をぶら下げで書き出す
+  const hang = /<bibliography[^>]* hanging-indent="true"/.test(xml);
+  assert.strictEqual(hang, m.kind !== 'numeric', `ぶら下げの指定: ${k}`);
   n++;
   if (process.argv[2]) fs.writeFileSync(path.join(process.argv[2], `test_${k}.csl`), xml);
 }

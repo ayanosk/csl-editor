@@ -14,6 +14,17 @@ for (const f of ['chicago-notes-bibliography', 'ieee']) {
   console.log(`${same === ch.length ? 'OK' : 'NG'} ${f}：${same}/${ch.length}（${r.kind}、和文は ${r.starter} の型）`);
   ch.filter((x) => !x.same).slice(0, 3).forEach((x) => console.log(`   ${x.id} ${x.place}\n   元: ${x.original}\n   移: ${x.converted}`));
   if (same !== ch.length) bad++;
+  console.log(`   種類のタブ（元のスタイルが書き分けているもの）：${r.model.typeTabs.join(' ')}`);
+  // タブにしなかった種類（元のスタイルが既定のタブと同じに組むもの）も、移したスタイルで元どおりに組める
+  const rest = C.probesFor().filter((x) => !r.model.typeTabs.includes(x.type)).map((x) => x.it);
+  if (rest.length) {
+    const gen = G.generate({ ...r.model, info: { title: 't', id: 'http://example.org/t' } }, { only: 'en', embed: false });
+    const mk = (x) => { const e = new CSL.Engine({ retrieveLocale, retrieveItem: (id) => rest.find((i) => i.id === id) }, x, 'en-US', false); e.setOutputFormat('text'); e.updateItems(rest.map((i) => i.id)); return e; };
+    const ea = mk(xml), eb = mk(gen);
+    const ng = rest.filter((it) => ea.makeCitationCluster([{ id: it.id, locator: '42', label: 'page' }]) !== eb.makeCitationCluster([{ id: it.id, locator: '42', label: 'page' }]));
+    console.log(`${ng.length ? 'NG' : 'OK'} ${f}：タブにしなかった種類 ${rest.length - ng.length}/${rest.length}${ng.length ? '（' + ng.map((x) => x.type).join(' ') + '）' : ''}`);
+    if (ng.length) bad++;
+  }
   // 多言語版でも組める（和文は和文の書式、欧文は元のスタイル）
   const multi = G.generate({ ...r.model, info: { title: 't', id: 'http://example.org/t' } });
   const e = new CSL.Engine({ retrieveLocale, retrieveItem: (id) => items.find((i) => i.id === id) }, multi, 'ja-JP', false);

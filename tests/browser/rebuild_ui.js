@@ -24,10 +24,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await fc.accept([FIX]); await wait(1500);
   check('読み込むと微調整の画面', await p.evaluate(() => CSLApp.state.mode === 'official'));
   check('タブは微調整と大幅修正', (await p.evaluate(() => [...document.querySelectorAll('#panelTabs button')].map((x) => x.textContent).join('/'))) === '微調整/大幅修正');
-  await tab('大幅修正'); await wait(2500);
+  // 部品に移すのは数秒かかる（種類ごとに試しの文献を組む）。帯が出るまで待つ
+  await tab('大幅修正'); await p.waitForSelector('.rebuild-banner', { timeout: 60000 }); await wait(500);
+  await p.screenshot({ path: path.join(sp, 'rebuild_tabs.png') });
   check('大幅修正で部品の画面になる', await p.evaluate(() => CSLApp.state.mode === 'chips' && CSLApp.state.model.source.kind === 'official'));
   const banner = await p.$eval('.rebuild-banner', (n) => n.textContent);
-  check('帯に元のスタイルと一致の数', /Chicago/.test(banner) && /52\/52/.test(banner), banner.slice(0, 80));
+  check('帯に元のスタイルと一致の数', /Chicago/.test(banner) && /(\d+)\/\1 件/.test(banner) && /種類ごとの書き分け（\d+種類）/.test(banner), banner.slice(0, 80));
   const en = await out('s-en-book-1');
   check('欧文は元のスタイルのまま', en[0] === 'Brown, Emily. Village Records and the State. Example University Press, 2020.', en[0]);
   const ja = await out('s-ja-book-1');

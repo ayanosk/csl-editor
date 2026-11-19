@@ -1,6 +1,8 @@
 // 取り込みの確認：いまの文献に足す／言語を選んで取り込む／置き換える。
 const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs'), path = require('path');
+// 見本の件数（src/samples.json。見本を足しても試験を直さずに済むように）
+const BASE = require('../../src/samples.json').length;
 const [html, sp] = process.argv.slice(2);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const file = path.join(sp, 'mixed.json');
@@ -36,7 +38,7 @@ fs.writeFileSync(file, JSON.stringify([
   }); await wait(100);
   check('件数の表示が変わる', (await p.evaluate(() => document.querySelector('#importForm .hint:last-of-type').textContent)).includes('3件') || (await p.evaluate(() => document.getElementById('importForm').textContent)).includes('取り込む文献：3件'));
   await p.click('#btnDoImport'); await wait(400);
-  check('見本24件に3件が足される', (await p.evaluate(() => CSLApp.state.items.length)) === 27);
+  check(`見本${BASE}件に3件が足される`, (await p.evaluate(() => CSLApp.state.items.length)) === BASE + 3);
   check('中国語は入らない', !(await p.evaluate(() => CSLApp.state.items.some((i) => i.id === 'd'))));
   // 置き換える
   await pick();

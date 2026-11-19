@@ -1,5 +1,7 @@
 // 言語ごとの既定の書式（一覧から選んで足す）と、書誌の一覧（言語の見本・チェックで隠す・一覧に戻る）。
 const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
+// 見本の件数（src/samples.json。見本を足しても試験を直さずに済むように）
+const BASE = require('../../src/samples.json').length;
 const [html, sp] = process.argv.slice(2);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
@@ -16,7 +18,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // 1) 中国語の見本を足す
   await p.click('#btnAddItem'); await wait(200);
   await p.evaluate(() => [...document.querySelectorAll('#langSampleBtns button')].find((x) => x.textContent.includes('中国語')).click()); await wait(400);
-  check('中国語の見本が4件加わる', (await p.evaluate(() => document.querySelectorAll('#itemList .item-row').length)) === 28);
+  check('中国語の見本が4件加わる', (await p.evaluate(() => document.querySelectorAll('#itemList .item-row').length)) === BASE + 4);
   check('ボタンが押された状態になる', await p.evaluate(() => [...document.querySelectorAll('#langSampleBtns button')].find((x) => x.textContent.includes('中国語')).getAttribute('aria-pressed') === 'true'));
   // 2) チェックを外すとプレビューから消える
   const before = await p.evaluate(() => document.querySelectorAll('#previewList .item').length);
@@ -41,7 +43,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // 6) 外す
   await p.click('#btnAddItem'); await wait(200);
   await p.evaluate(() => [...document.querySelectorAll('#langSampleBtns button')].find((x) => x.textContent.includes('中国語')).click()); await wait(400);
-  check('もう一度押すと見本が外れる', (await p.evaluate(() => document.querySelectorAll('#itemList .item-row').length)) === 24);
+  check('もう一度押すと見本が外れる', (await p.evaluate(() => document.querySelectorAll('#itemList .item-row').length)) === BASE);
   console.log('エラー:', errs.length ? errs.join(' / ') : 'なし');
   await b.close();
 })();
