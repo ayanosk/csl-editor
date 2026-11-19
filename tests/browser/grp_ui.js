@@ -1,6 +1,6 @@
 // ヘッドレスの Chrome でアプリを操作する検証。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
 // puppeteer-core は marp-cli に同梱のものを使う（PUPPETEER_CORE で差し替え可）。Chrome は CHROME で差し替え可。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const b = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
@@ -11,6 +11,7 @@ const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) =
   const chipsTxt = () => p.evaluate(() => [...document.querySelectorAll('#chipRow .chip')].map(c => c.textContent).join(' '));
   const card = (t) => p.evaluate((t) => { const n = [...document.querySelectorAll('#previewList .item')].find(n => n.textContent.includes(t)); return n ? [...n.querySelectorAll('.out .v')].map(v => v.textContent).join(' ‖ ') : '(なし)'; }, t);
   // MLA
+  await toStarter(p);
   await p.evaluate(() => [...document.querySelectorAll('#starterList button')][2].click()); await wait(400);
   await tab('欧文'); await wait(300);
   console.log('MLA 欧文・図書のチップ:', await chipsTxt());
@@ -29,6 +30,7 @@ const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) =
   console.log('訳者を囲んだチップ:', await chipsTxt());
   // Chicago の前掲書・op. cit.
   await p.click('#btnStarter'); await wait(200);
+  await toStarter(p);
   await p.evaluate(() => [...document.querySelectorAll('#starterList button')][0].click()); await wait(400);
   await p.evaluate(() => [...document.querySelectorAll('.seg button')].find(b => b.textContent === '注（2回目以降）').click()); await wait(300);
   await p.evaluate(() => [...document.querySelectorAll('#panelBody .small-btn')].find(b => b.textContent.includes('前掲書')).click()); await wait(500);

@@ -1,6 +1,6 @@
 // 公式のスタイルの大幅修正：読み込む → 大幅修正 → 部品に移る（欧文は元のまま、和文は和文の書式）→ 多言語版を書き出す
 // → 微調整に戻る → 大幅修正の続きを開く → 再読み込みしても残る
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const fs = require('fs'), path = require('path');
 const [html, sp] = process.argv.slice(2);
 const FIX = path.join(__dirname, '..', 'fixtures', 'chicago-notes-bibliography.csl');
@@ -19,6 +19,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const tab = (t) => p.evaluate((t) => [...document.querySelectorAll('#panelTabs button')].find((x) => x.textContent === t).click(), t);
   const out = (id) => p.evaluate((id) => [...document.querySelectorAll(`#previewList .item[data-id="${id}"] .out .v`)].map((n) => n.textContent), id);
   // 1) 読み込んで、大幅修正へ
+  await toStarter(p);
   const [fc] = await Promise.all([p.waitForFileChooser(), p.click('#btnDlgLoadCsl')]);
   await fc.accept([FIX]); await wait(1500);
   check('読み込むと微調整の画面', await p.evaluate(() => CSLApp.state.mode === 'official'));

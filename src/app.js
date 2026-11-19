@@ -7,6 +7,8 @@
   const CV = window.CSLConvert;
   const LOCALES = window.CSL_LOCALES;
   const SAMPLES = window.CSL_SAMPLES;
+  // 言語ごとの見本（中国語・韓国語・ロシア語など）。一覧の画面のボタンで、言語ごとにいまの文献へ足す。
+  const LANG_SAMPLES = window.CSL_LANG_SAMPLES || {};
   const STORE_KEY = 'csl-editor-v1';
 
   // ---- 状態 ------------------------------------------------------------------
@@ -15,6 +17,7 @@
     items: null,
     source: '見本データ',
     hidden: [], // 隠した文献の id。データには残し、プレビューと組版から外す
+    langSamples: [], // いまの文献に足している言語ごとの見本（言語コード）
     mode: 'chips', // chips＝型から組む／official＝公式のスタイルを手直しする
     official: null, // { xml: 元の CSL, edits: 編集の一覧, title, id, source: 元のスタイルの名前 }
     ui: { panel: 'ja', target: 'bib', tab: 'book', sel: null, filter: 'auto', loc: 'page:42' },
@@ -89,7 +92,7 @@
 
   function save() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ model: state.model, items: state.items, source: state.source, hidden: state.hidden, ui: state.ui, mode: state.mode, official: state.official }));
+      localStorage.setItem(STORE_KEY, JSON.stringify({ model: state.model, items: state.items, source: state.source, hidden: state.hidden, langSamples: state.langSamples, ui: state.ui, mode: state.mode, official: state.official }));
     } catch (e) { /* 保存できない環境でも動かす */ }
   }
   function load() {
@@ -102,6 +105,7 @@
       state.items = Array.isArray(s.items) ? s.items : null;
       state.source = s.source || '見本データ';
       state.hidden = Array.isArray(s.hidden) ? s.hidden.map(String) : [];
+      state.langSamples = Array.isArray(s.langSamples) ? s.langSamples.filter((l) => LANG_SAMPLES[l]) : [];
       Object.assign(state.ui, s.ui || {});
       ensureUids(state.model);
       if (s.mode === 'official' && s.official && s.official.xml) {
@@ -128,6 +132,7 @@
 
   const WRAP_LABELS = {
     none: 'なし', nijukagi: '『　』', kagi: '「　」', dquote: '“　”', paren: '（　）', hparen: '(　)', bracket: '[　]',
+    zhbook: '《　》', zharticle: '〈　〉', gfr: '«\u00a0　\u00a0»', guil: '«　»', dequote: '„　“', sdq: '"　"',
   };
   function termOf(key) { return termOfSys(state.ui.panel, key); }
   // 部品 → 添える用語（巻・号・頁・版・引用箇所・参照日）
@@ -316,7 +321,7 @@
         ' ', h('button', { type: 'button', onclick: () => copyChips('cite', '注（初出）') }, '注（初出）の並びを写す')),
         h('p', { class: 'hint' }, '型を選ぶ（この書式の全種類を置き換えます）：',
           ...(sk === 'ja'
-            ? [['short', '山田『デジタル史料学入門』50頁'], ['prev', '山田、前掲書、50頁']]
+            ? [['short', '山本『デジタル史料学入門』50頁'], ['prev', '山本、前掲書、50頁']]
             : [['short', 'Dubois and Moreau, Numbers in the Archive, 50'], ['prev', 'Dubois and Moreau, op. cit., 50']])
             .map(([k, label]) => h('button', { type: 'button', class: 'small-btn', onclick: () => applySubPreset(k, label) }, label))));
     } else if (state.ui.target === 'citeIbid') {
@@ -593,12 +598,12 @@
       add('名前の順', select([['given', '名 姓（そのまま）'], ['family', '最初の人だけ「姓, 名」'], ['family-all', '全員「姓, 名」']], () => o.order || 'given', (v) => { o.order = v; }));
       add('名前の形', select([['long', '姓名とも'], ['short', '姓だけ']], () => o.form || 'long', (v) => { o.form = v; }));
       if (c.f !== 'author') {
-        add('役割語', select([['none', '付けない'], ['after', '後ろに付ける（山田花子編）'], ['before', '前に付ける（edited by）']], () => o.role || 'none', (v) => { o.role = v; renderDetail(); }));
+        add('役割語', select([['none', '付けない'], ['after', '後ろに付ける（山本花子編）'], ['before', '前に付ける（edited by）']], () => o.role || 'none', (v) => { o.role = v; renderDetail(); }));
         if (o.role && o.role !== 'none') {
           add('役割語の形', select([['short', '短い形（編・ed.・trans.）'], ['verb', '前に置く形（edited by）']], () => o.roleForm || (o.role === 'before' ? 'verb' : 'short'), (v) => { o.roleForm = v; }));
         }
       } else {
-        add('著者が無いとき', check(() => o.substitute !== false, (v) => { o.substitute = v; }, '編者で代える（「山田太郎編」）'));
+        add('著者が無いとき', check(() => o.substitute !== false, (v) => { o.substitute = v; }, '編者で代える（「山本太郎編」）'));
       }
     }
     if (def.hasForm) add('表記', select([['long', '全形'], ['short', '略記（Zotero の略記の欄）']], () => o.form || 'long', (v) => { o.form = v; }));
@@ -641,6 +646,11 @@
     if (sk !== 'ja') add('欧文の姓', sel(n, 'familyCase', [['', 'そのまま（Dubois）'], ['uppercase', 'すべて大文字（DUBOIS）'], ['small-caps', 'スモールキャピタル（頭だけ大きく、残りは小さな大文字）']]));
     add('参考文献の文末', inp(S.layout.bib, 'suffix'));
     if (state.model.kind === 'note') add('注の文末', inp(S.layout.cite, 'suffix'));
+    // 縦書き向け：巻・号・頁・版・引用箇所を漢数字にする（和文と、中国語・韓国語の書式）
+    if (sk === 'ja' || sk === 'zh' || sk === 'ko') {
+      add('数字', h('span', {}, sel(S, 'kanjiNumerals', [['none', '算用数字（42頁・230頁）'], ['zero', '漢数字・〇を使う（四二頁・二三〇頁）'], ['ten', '漢数字・十百千を使う（四十二頁・二百三十頁）']]),
+        h('span', { class: 'muted small', text: `　巻・号・頁・版・引用箇所が対象（${G.KANJI_MAX}まで）。発行年は漢数字にできません。Zotero が年を漢数字で組む機能を持たないためで、桁数や元号とは関係ありません` })));
+    }
     return h('div', { class: 'card' },
       h('h3', { text: (sk === 'ja' || sk === 'en' ? sysName(sk) : `${sysName(sk)}（${sk}）`) + 'の書式全体（全種類に共通）' }), grid,
       h('p', { class: 'hint', text: '和名（漢字・かな）は、姓と名の間を自動で詰め、頭文字にもしません。' }));
@@ -732,16 +742,23 @@
     const extras = G.extraLangs(m);
     const input = h('input', { id: 'newLang', type: 'text', placeholder: '例：fr', size: 6,
       onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); addLang(); } } });
-    const addLang = () => {
-      const err = ST.addLanguage(m, input.value);
-      if (err) { alert(err); input.focus(); return; }
+    // preset に LANG_PRESETS の id を渡すと、その言語の既定の書式で足す。渡さなければ欧文の書式を写す。
+    const addLang = (preset) => {
+      const err = ST.addLanguage(m, preset ? null : input.value, preset);
+      if (err) { alert(err); if (!preset) input.focus(); return; }
       const k = m.extraLangs[m.extraLangs.length - 1];
       ensureUids(m);
       state.ui.panel = k; state.ui.sel = null;
       renderPanels();
       changed({ row: false });
-      toast(`${sysName(k)}（${k}）の書式を足しました。いまの欧文の書式を写してあります`);
+      toast(preset ? `${m.systems[k].label}（${k}）の書式を足しました` : `${sysName(k)}（${k}）の書式を足しました。いまの欧文の書式を写してあります`);
     };
+    const presetList = h('div', { class: 'preset-list' }, ...ST.LANG_PRESETS.map((p) => {
+      const have = extras.includes(p.lang);
+      return h('button', { type: 'button', class: 'preset-pick', disabled: have, title: `典拠：${p.src}`, onclick: () => addLang(p.id) },
+        h('b', {}, p.name, h('span', { class: 'how', text: have ? `　${langLabel(p.lang)}の書式はもうあります` : `　言語欄が ${langLabel(p.lang)} の文献に使います` })),
+        h('span', { class: 'ex', dir: 'auto', text: p.ex }));
+    }));
     const list = extras.length
       ? h('ul', { class: 'lang-list' }, ...extras.map((k) => h('li', {},
         h('b', { text: `${sysName(k)}（${k}）` }), ' ',
@@ -755,13 +772,22 @@
       : h('p', { class: 'muted small', text: 'まだありません。いまは英語以外の欧文も、すべて「欧文の書式」で組みます。' });
     return h('div', { class: 'card' },
       h('h3', { text: '言語ごとの書式' }),
-      h('p', { class: 'hint', text: '英語は「欧文の書式」が既定です。フランス語の文献は « » や「et」で組みたい、など言語ごとに変えたいときは、Zotero の「言語」欄の言語コード（fr、de など）を入れて足してください。いまの欧文の書式を写した新しい書式ができ、用語表にその言語の列が増えます。' }),
+      h('p', { class: 'hint', text: '英語は「欧文の書式」が既定です。下の言語を選ぶと、その言語の人文学の論文で一般的な書き方で、新しい書式ができます（Zotero の「言語」欄がその言語の文献だけに使われます）。用語表にもその言語の列が増えます。どれも出発点なので、投稿先の規定に合わせて直してください。注形式以外の型では、参考文献だけがその言語の形になり、本文中の引用は欧文の書式を写します。' }),
       list,
-      h('div', { class: 'lang-add' }, '言語コード ', input, ' ', h('button', { type: 'button', onclick: addLang }, '足す')));
+      h('h4', { class: 'sub-head', text: '言語を選んで足す' }),
+      presetList,
+      h('details', { class: 'lang-other' }, h('summary', { text: '一覧にない言語を足す（欧文の書式を写す）' }),
+        h('div', { class: 'lang-add' }, '言語コード ', input, ' ', h('button', { type: 'button', onclick: () => addLang() }, '足す'))));
   }
 
   // ---- 右：プレビュー ---------------------------------------------------------------
-  function currentItems() { return state.items || SAMPLES; }
+  // いまの文献：見本か読み込んだ文献に、足している言語の見本を続ける（同じ id の文献があれば、そちらを使う）。
+  function currentItems() {
+    const base = state.items || SAMPLES;
+    if (!state.langSamples.length) return base;
+    const ids = new Set(base.map((i) => String(i.id)));
+    return base.concat(state.langSamples.flatMap((l) => LANG_SAMPLES[l] || []).filter((i) => !ids.has(String(i.id))));
+  }
   // プレビューと組版に出す文献（隠した文献を除く）。
   function visibleItems() {
     const off = new Set(state.hidden);
@@ -776,6 +802,13 @@
       counts[k] = (counts[k] || 0) + 1;
     }
     return counts;
+  }
+  // 和暦などの日付は、Zotero が年として読めず文字のまま渡す。「平成八年」と「年」まで入れると、書式が付ける「年」と重なる。
+  function dateWarning(it) {
+    const d = it.issued;
+    if (!d || !d.literal || !/年\s*$/.test(d.literal)) return null;
+    const base = d.literal.replace(/年\s*$/, '');
+    return `発行年「${d.literal}」は、書式が付ける「年」と重なって「${d.literal}年」になります。Zotero の日付欄は「${base}」のように「年」を付けずに入れてください。`;
   }
   function langWarning(it) {
     const r = sysOf(it);
@@ -796,7 +829,7 @@
   function readingWarning(it) {
     if (!state.model.sortByReading || sysOf(it).sys !== 'ja') return null;
     const first = String(it.note || '').split('\n').map((l) => l.trim()).find((l) => l && !CSL_LINE.test(l));
-    if (!first) return '読みがないので、五十音順の並びでは後ろに回ります。Zotero の「その他（Extra）」欄の1行目に、著者の読みをひらがなで入れてください（例：やまだ はなこ）。';
+    if (!first) return '読みがないので、五十音順の並びでは後ろに回ります。Zotero の「その他（Extra）」欄の1行目に、著者の読みをひらがなで入れてください（例：やまもと はなこ）。';
     if (!KANA_LINE.test(first)) return `「その他（Extra）」欄の1行目（${first.slice(0, 20)}）が読みになっていないので、その文字で並びます。読みを1行目に入れてください。`;
     return null;
   }
@@ -827,6 +860,33 @@
     e.setOutputFormat('html');
     e.updateItems(items.map((i) => i.id));
     return e;
+  }
+
+  // ---- 縦書きプレビュー ----------------------------------------------------------
+  // 注（初出）と参考文献を縦書きで並べる。数字の縦中横は見た目だけ（2桁まで。3桁以上は横倒しのまま）。
+  function tateTcy(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const n of nodes) {
+      if (!/\d/.test(n.nodeValue)) continue;
+      const frag = document.createDocumentFragment();
+      for (const part of n.nodeValue.split(/(\d+)/)) {
+        if (/^\d{1,2}$/.test(part)) frag.append(h('span', { class: 'tcy', text: part }));
+        else if (part) frag.append(document.createTextNode(part));
+      }
+      n.replaceWith(frag);
+    }
+  }
+  // 横書き／縦書きの切り替え。カードや操作はそのままで、組み上がり（.v）だけを縦に組む。
+  function applyWritingMode() {
+    const tate = !!state.ui.tate;
+    $('previewList').classList.toggle('tate-mode', tate);
+    $('tcyWrap').hidden = !tate;
+    $('tateTcy').checked = state.ui.tcy !== false;
+    document.querySelectorAll('#writingMode button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.m === 'v') === tate)));
+    if (tate && state.ui.tcy !== false) document.querySelectorAll('#previewList .out .v').forEach(tateTcy);
+    // 縦書きの紙面は右端が書き出し（スクロールの 0 が右端）
   }
 
   function renderPreview() {
@@ -869,7 +929,7 @@
         if (hasSubsequent()) citeRows = noteSequence(eng, id, items);
         else cite = eng.makeCitationCluster([{ id, locator: curLoc().value, label: curLoc().label }]);
       } catch (e) { cite = '（組めませんでした）'; }
-      const warn = [langWarning(it), readingWarning(it)].filter(Boolean).join(' ');
+      const warn = [langWarning(it), readingWarning(it), dateWarning(it)].filter(Boolean).join(' ');
       const card = h('div', { class: 'item', 'data-id': id, 'data-sys': sys, 'data-tab': tab, 'data-authors': authorCountLabel(it), title: '押すと、この文献の書式を編集します',
         onclick: () => { state.ui.panel = sys; state.ui.tab = tab; state.ui.sel = null; renderPanels(); renderPreviewHighlight(); save(); } },
         h('div', { class: 'meta' },
@@ -894,6 +954,7 @@
       h('ol', {}, ...order.map((id, k) => h('li', { html: stripDiv(entries[k]) })))) : null;
     $('previewList').replaceChildren(...nodes, h('p', { id: 'previewEmpty', class: 'muted small', hidden: true,
       text: '条件に合う文献がありません。絞り込みを変えるか、「書誌を編集する」から「新しく入れる」で入れてみてください（言語ごとの書式なら、言語欄をその言語にします）。' }), orderBox || '', hiddenBox || '');
+    applyWritingMode();
     renderPreviewHighlight();
     // 種類ごとの件数を更新する
     if (isFormatPanel(state.ui.panel)) {
@@ -1050,7 +1111,7 @@
     ['accessed', '参照日', 'date', ['webpage'], null, '例：2026-11-1'],
     ['URL', 'URL', 'text', ALL, null, ''],
     ['DOI', 'DOI', 'text', ['article-journal', 'chapter', 'paper-conference', 'book'], null, '例：10.1234/abcd'],
-    ['note', 'その他（Extra）', 'lines', ALL, null, '五十音順に並べるときの読み。1行目にひらがなで（例：やまだ はなこ）'],
+    ['note', 'その他（Extra）', 'lines', ALL, null, '五十音順に並べるときの読み。1行目にひらがなで（例：やまもと はなこ）'],
   ];
 
   // 赤い * を付ける欄（その種類の書誌に欠かせないもの）。保存を止めるのは MUST（言語と題名）が空のときだけ。
@@ -1110,7 +1171,8 @@
     return state.items;
   }
 
-  function openItemEditor(id) {
+  // fromList：「書誌を編集する」の一覧から開いたとき。保存しても、やめても一覧に戻る。
+  function openItemEditor(id, fromList) {
     const orig = id === null ? null : currentItems().find((i) => i.id === id);
     const it = orig ? clone(orig) : { type: 'book', language: 'ja' };
     const form = $('itemForm');
@@ -1123,7 +1185,7 @@
     for (const [key, label, kind, , , ex] of ITEM_FIELDS) {
       let ctl;
       if (kind === 'names') {
-        ctl = h('textarea', { rows: 2, placeholder: '1行に1人。姓, 名（例：山田, 花子　Dubois, Léa）' });
+        ctl = h('textarea', { rows: 2, placeholder: '1行に1人。姓, 名（例：山本, 花子　Dubois, Léa）' });
         ctl.value = namesToText(it[key]);
       } else if (kind === 'date') {
         ctl = h('input', { type: 'text', placeholder: ex, value: dateToText(it[key]) });
@@ -1177,7 +1239,8 @@
       const items = editableItems();
       if (orig) {
         const k = items.findIndex((i) => i.id === orig.id);
-        items[k] = out;
+        // 言語ごとの見本を直したときは、いまの文献に写しを入れる（同じ id なので見本の方は出なくなる）
+        if (k >= 0) items[k] = out; else items.push(out);
       } else {
         out.id = 'u-' + Date.now().toString(36);
         items.push(out);
@@ -1186,14 +1249,17 @@
       renderPanels();
       changed({ row: false });
       toast(orig ? '文献を直しました' : '文献を入れました');
+      if (fromList) openItemList();
     });
     form.replaceChildren(
       h('h2', { text: orig ? '文献を直す' : '文献を新しく入れる' }),
       h('div', { class: 'form-grid item-grid' }, h('label', { text: '資料の種類' }), typeSel),
       grid, langList,
       h('p', { class: 'hint' }, h('span', { class: 'req-mark', text: '*' }), ' は、この種類の書誌に欠かせない項目です。言語と題名が空のままでは保存できません。'),
-      h('p', { class: 'hint', text: '人名は1行に1人、「姓, 名」の順でカンマで区切ります。和名は「山田 花子」と空白で区切ってもかまいません。カンマも空白も無い行は、団体名などとしてそのまま出します。入れた文献はこのブラウザの中にだけ保存されます。' }),
-      h('div', { class: 'dlg-actions' }, h('button', { value: 'cancel' }, 'やめる'), ' ', ok));
+      h('p', { class: 'hint', text: '人名は1行に1人、「姓, 名」の順でカンマで区切ります。和名は「山本 花子」と空白で区切ってもかまいません。カンマも空白も無い行は、団体名などとしてそのまま出します。入れた文献はこのブラウザの中にだけ保存されます。' }),
+      fromList
+        ? h('div', { class: 'dlg-actions' }, h('button', { type: 'button', onclick: () => { $('dlgItem').close(); openItemList(); } }, '← 一覧に戻る（保存しない）'), h('span', { class: 'spacer' }), ok)
+        : h('div', { class: 'dlg-actions' }, h('button', { value: 'cancel' }, 'やめる'), ' ', ok));
     $('dlgItem').showModal();
   }
 
@@ -1209,7 +1275,7 @@
     renderPanels();
     changed({ row: false });
   }
-  // 一覧の1行：〔図書・和文〕山田花子『デジタル史料学入門』2024
+  // 一覧の1行：〔図書・和文〕山本花子『デジタル史料学入門』2024
   function itemSummary(it) {
     const { sys } = sysOf(it);
     // tabOfType は tabsOf にある鍵（無ければ「その他」）を返すので、tab は必ず見つかる
@@ -1219,16 +1285,41 @@
     return `〔${tab.label}・${sysBadge(sys)}〕` + (who.length ? who.slice(0, 2).join('・') + (who.length > 2 ? ' ほか' : '') + '　' : '') + (it.title || '（題名なし）') + (y ? `　${y}` : '');
   }
   // 「見本の書誌を編集する」：文献の一覧から選んで直す。末尾の「新しく入れる」で手入力もできる。
-  function openItemList() {
+  // 各行のチェックを外すと、その文献をプレビューから隠す（「隠す」と同じ）。
+  function drawItemList() {
     const off = new Set(state.hidden);
     const tabIdx = Object.fromEntries(G.tabsOf(state.model).map((t, k) => [t.key, k]));
     const items = currentItems().map((it, k) => ({ it, k, t: tabIdx[G.tabOfType(it.type, state.model)] }))
       .sort((a, b) => a.t - b.t || a.k - b.k).map((x) => x.it);
     $('itemListTitle').textContent = usingSamples() ? '見本の書誌を編集する' : '書誌を編集する';
-    $('itemList').replaceChildren(...items.map((it) => h('button', { type: 'button', class: 'item-pick' + (off.has(String(it.id)) ? ' is-hidden' : ''),
-      onclick: () => { $('dlgItemList').close(); openItemEditor(it.id); } },
-      itemSummary(it), off.has(String(it.id)) ? h('span', { class: 'muted', text: '（隠している）' }) : '')));
-    $('dlgItemList').showModal();
+    $('langSampleBtns').replaceChildren(...Object.keys(LANG_SAMPLES).map((l) => {
+      const on = state.langSamples.includes(l);
+      return h('button', { type: 'button', class: 'lang-sample' + (on ? ' on' : ''), 'aria-pressed': String(on),
+        title: on ? 'この言語の見本を外します' : 'この言語の見本（図書・本の章・雑誌論文・ウェブページの4件）を足します',
+        onclick: () => {
+          state.langSamples = on ? state.langSamples.filter((x) => x !== l) : [...state.langSamples, l];
+          drawItemList();
+          renderPanels();
+          changed({ row: false });
+        } }, (on ? '✓ ' : '＋ ') + langLabel(l));
+    }));
+    $('itemList').replaceChildren(...items.map((it) => {
+      const id = String(it.id);
+      const box = h('input', { type: 'checkbox', checked: !off.has(id), title: 'プレビューに出す',
+        onchange: () => {
+          state.hidden = box.checked ? state.hidden.filter((x) => x !== id) : [...state.hidden, id];
+          row.classList.toggle('is-hidden', !box.checked);
+          renderPanels();
+          changed({ row: false });
+        } });
+      const row = h('div', { class: 'item-row' + (off.has(id) ? ' is-hidden' : '') }, box,
+        h('button', { type: 'button', class: 'item-pick', dir: 'auto', onclick: () => { $('dlgItemList').close(); openItemEditor(it.id, true); } }, itemSummary(it)));
+      return row;
+    }));
+  }
+  function openItemList() {
+    drawItemList();
+    if (!$('dlgItemList').open) $('dlgItemList').showModal();
   }
 
   // ---- 読み込み・書き出し ------------------------------------------------------------
@@ -1276,12 +1367,70 @@
       it.id = id;
       if (!it.type) it.type = 'book';
     });
-    state.items = data;
-    state.source = name;
-    state.hidden = [];
-    renderPanels();
-    changed({ row: false });
-    toast(`${data.length}件の文献を読み込みました`);
+    openImport(data, name);
+  }
+
+  // 言語欄の値 → 一覧に出す名前。「フランス語（fr）」の形。空欄は「言語欄が空」。
+  function langKeyOf(it) { return String(it.language || '').trim().toLowerCase().split(/[-_]/)[0]; }
+  function langLabel(k) {
+    if (!k) return '言語欄が空';
+    const name = k === 'ja' ? '日本語' : k === 'en' ? '英語' : ST.LANG_NAMES[k];
+    return name ? `${name}（${k}）` : k;
+  }
+  // 取り込む前の確認：いまの文献と置き換えるか足すか、どの言語の文献を入れるか。
+  function openImport(data, name) {
+    const byLang = new Map();
+    for (const it of data) { const k = langKeyOf(it); byLang.set(k, (byLang.get(k) || 0) + 1); }
+    const langs = [...byLang.keys()].sort((a, b) => (a === '') - (b === '') || (a === 'ja' ? -1 : b === 'ja' ? 1 : a === 'en' ? -1 : b === 'en' ? 1 : a.localeCompare(b)));
+    const now = currentItems().length;
+    const mode = (v, label, hint, checked) => h('label', { class: 'import-mode' },
+      h('input', { type: 'radio', name: 'importMode', value: v, checked }), ' ', h('b', { text: label }), h('span', { class: 'muted small', text: '　' + hint }));
+    const boxes = langs.map((k) => h('label', { class: 'import-lang' },
+      h('input', { type: 'checkbox', value: k, checked: true }), ` ${langLabel(k)}　${byLang.get(k)}件`));
+    const count = h('p', { class: 'hint' });
+    const form = $('importForm');
+    const picked = () => new Set(boxes.map((b) => b.firstChild).filter((x) => x.checked).map((x) => x.value));
+    const showCount = () => {
+      const n = data.filter((it) => picked().has(langKeyOf(it))).length;
+      count.textContent = `取り込む文献：${n}件`;
+    };
+    form.onchange = showCount;
+    const ok = h('button', { type: 'button', id: 'btnDoImport', class: 'primary', onclick: () => {
+      const sel = picked();
+      const add = data.filter((it) => sel.has(langKeyOf(it)));
+      if (!add.length) { alert('取り込む言語を1つ以上選んでください。'); return; }
+      const replace = form.querySelector('input[name="importMode"]:checked').value === 'replace';
+      if (replace) {
+        state.items = add;
+        state.source = name;
+        state.hidden = [];
+        state.langSamples = []; // 見本ごと置き換える（言語の見本は、一覧の画面からまた足せる）
+      } else {
+        const base = currentItems().slice();
+        const ids = new Set(base.map((i) => String(i.id)));
+        for (const it of add) { while (ids.has(String(it.id))) it.id = String(it.id) + '_'; ids.add(String(it.id)); }
+        state.items = base.concat(add);
+        state.langSamples = []; // 足していた言語の見本は、いまの文献に写したので外す
+        state.source = `${state.source.replace(/（手を加えたもの）$/, '')}＋${name}`;
+      }
+      $('dlgImport').close();
+      renderPanels();
+      changed({ row: false });
+      toast(replace ? `${add.length}件の文献を読み込みました` : `${add.length}件の文献を足しました（全部で${state.items.length}件）`);
+    } }, '取り込む');
+    form.replaceChildren(
+      h('h2', { text: '文献を取り込む' }),
+      h('p', { text: `${name}：${data.length}件` }),
+      h('h3', { class: 'dlg-sec', text: '取り込み方' }),
+      mode('replace', 'いまの文献と置き換える', `いまの${usingSamples() ? '見本' : '文献'}（${now}件）の代わりに、この文献だけを出します`, true),
+      mode('add', 'いまの文献に足す', `いまの${usingSamples() ? '見本' : '文献'}（${now}件）の後ろに加えます`, false),
+      h('h3', { class: 'dlg-sec', text: '取り込む言語' }),
+      h('p', { class: 'hint', text: 'Zotero の「言語」欄で分けています。チェックを外した言語の文献は取り込みません。' }),
+      h('div', { class: 'import-langs' }, ...boxes),
+      count,
+      h('div', { class: 'dlg-actions' }, h('button', { value: 'cancel' }, 'やめる'), h('span', { class: 'spacer' }), ok));
+    showCount();
+    $('dlgImport').showModal();
   }
 
   // 読み込んだ .csl の名前：ファイル名（.csl を除く）に _edited を付ける。
@@ -1597,6 +1746,7 @@
     const hiddenBox = hiddenBoxOf(hiddenItems);
     const list = $('previewList');
     list.replaceChildren(...nodes, h('p', { id: 'previewEmpty', class: 'muted small', hidden: true, text: '条件に合う文献がありません。' }), hiddenBox || '');
+    applyWritingMode();
     list.onclick = (e) => {
       const seg = e.target.closest('.cslseg');
       if (!seg) return;
@@ -1807,9 +1957,19 @@
     $('btnExportSplit').addEventListener('click', openSplit);
     $('btnDoSplit').addEventListener('click', doSplit);
     $('btnHelp').addEventListener('click', () => $('dlgHelp').showModal());
+    $('btnHelpUpload').addEventListener('click', () => readFile($('fileCsl'), (text, name) => { if (loadCsl(text, name)) $('dlgHelp').close(); }));
+    $('btnHelpStarter').addEventListener('click', () => { $('dlgHelp').close(); openStarter(); });
     $('btnChangelog').addEventListener('click', () => $('dlgChangelog').showModal());
     $('btnAddItem').addEventListener('click', openItemList);
-    $('btnNewItem').addEventListener('click', () => { $('dlgItemList').close(); openItemEditor(null); });
+    document.querySelectorAll('#writingMode button').forEach((b) => b.addEventListener('click', () => { state.ui.tate = b.dataset.m === 'v'; save(); schedulePreview(); }));
+    $('tateTcy').addEventListener('change', (e) => { state.ui.tcy = e.target.checked; save(); schedulePreview(); });
+    // 縦書きのときは、ホイールの上下を横のスクロールにする（下に回すと先＝左へ進む）。トラックパッドの横の動きはそのまま
+    $('previewList').addEventListener('wheel', (e) => {
+      if (!state.ui.tate || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      $('previewList').scrollLeft -= e.deltaY;
+    }, { passive: false });
+    $('btnNewItem').addEventListener('click', () => { $('dlgItemList').close(); openItemEditor(null, true); });
     // 入力欄で Enter を押しても、入れかけの文献が閉じて消えないようにする。
     $('itemForm').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.preventDefault(); });
     $('btnResetItems').addEventListener('click', () => {
@@ -1823,7 +1983,7 @@
     setupCslDrop();
     renderPanels();
     renderPreview();
-    if (!restored) openStarter();
+    if (!restored) $('dlgHelp').showModal(); // 初めて開いたときは、アプリの説明と使い方から
   }
   window.CSLApp = { state, renderPreview, editedTitle, get offView() { return offView; } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

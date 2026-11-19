@@ -1,18 +1,19 @@
 // ヘッドレスの Chrome でアプリを操作する検証。run_all.sh から呼ぶ（引数：配布 HTML のパス、作業用ディレクトリ）。
 // puppeteer-core は marp-cli に同梱のものを使う（PUPPETEER_CORE で差し替え可）。Chrome は CHROME で差し替え可。
-const { puppeteer, CHROME } = require('./_puppeteer.js');
+const { puppeteer, CHROME, toStarter } = require('./_puppeteer.js');
 const [html, sp] = process.argv.slice(2); const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const b = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
   const p = await b.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('dialog', (d) => d.accept());
   await p.setViewport({ width: 1400, height: 900 });
   await p.goto('file://' + html); await wait(600);
+  await toStarter(p);
   await p.evaluate(() => document.querySelector('#starterList button').click()); await wait(400);
   const st = () => p.evaluate(() => { const s = document.querySelectorAll('#previewFilter select'); return s[0].selectedOptions[0].text + ' | ' + s[1].selectedOptions[0].text + ' | ' + [...new Set([...document.querySelectorAll('#previewList .item')].filter(n => !n.hidden).map(n => n.dataset.sys))].join(',') + ' ' + document.querySelector('#previewFilter > span:last-child').textContent; });
   const pick = (k, v) => p.evaluate((k, v) => { const s = document.querySelectorAll('#previewFilter select')[k]; s.value = v; s.dispatchEvent(new Event('change')); }, k, v);
   console.log('既定:', await st());
   // fr の書式を足し、仏語の文献を1件入れる
-  await p.click('.add-lang'); await wait(200); await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
+  await p.click('.add-lang'); await wait(200); await p.evaluate(() => document.querySelectorAll('.lang-other').forEach((d) => { d.open = true; })); await p.type('#newLang', 'fr'); await p.keyboard.press('Enter'); await wait(400);
   await p.click('#btnAddItem'); await wait(200); await p.click('#btnNewItem'); await wait(300);
   await p.evaluate(() => { const set = (lab, v) => { const l = [...document.querySelectorAll('#itemForm label')].find(l => !l.hidden && l.textContent === lab); l.nextElementSibling.value = v; }; set('言語', 'fr'); set('著者', 'Dupont, Jean'); set('書名', 'Histoire'); set('出版者', 'Éditions Exemple'); set('発行年月日', '2020'); });
   await p.evaluate(() => [...document.querySelectorAll('#itemForm button')].find(b => b.textContent === '入れる').click()); await wait(500);

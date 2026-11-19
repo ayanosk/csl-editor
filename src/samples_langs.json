@@ -1,0 +1,940 @@
+{
+ "zh": [
+  {
+   "id": "s-zh-book-1",
+   "type": "book",
+   "language": "zh-CN",
+   "title": "明清江南市镇史料研究",
+   "author": [
+    {
+     "family": "王",
+     "given": "晓明"
+    }
+   ],
+   "publisher": "江南出版社",
+   "publisher-place": "上海",
+   "issued": {
+    "date-parts": [
+     [
+      2019
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-zh-chapter-1",
+   "type": "chapter",
+   "language": "zh-TW",
+   "title": "清代臺灣方志中的地名書寫",
+   "author": [
+    {
+     "family": "林",
+     "given": "美玲"
+    }
+   ],
+   "editor": [
+    {
+     "family": "陳",
+     "given": "志明"
+    },
+    {
+     "family": "黃",
+     "given": "淑芬"
+    }
+   ],
+   "container-title": "臺灣史料與數位人文",
+   "publisher": "南港出版社",
+   "publisher-place": "臺北",
+   "issued": {
+    "date-parts": [
+     [
+      2021
+     ]
+    ]
+   },
+   "page": "45-78"
+  },
+  {
+   "id": "s-zh-article-1",
+   "type": "article-journal",
+   "language": "zh-CN",
+   "title": "数字人文视野下的地方志整理",
+   "author": [
+    {
+     "family": "张",
+     "given": "伟"
+    },
+    {
+     "family": "刘",
+     "given": "芳"
+    }
+   ],
+   "container-title": "江南史学数据研究",
+   "volume": "12",
+   "issue": "3",
+   "issued": {
+    "date-parts": [
+     [
+      2023
+     ]
+    ]
+   },
+   "page": "15-32"
+  },
+  {
+   "id": "s-zh-web-1",
+   "type": "webpage",
+   "language": "zh-TW",
+   "title": "古籍全文資料庫使用說明",
+   "author": [
+    {
+     "literal": "江南古籍資料館"
+    }
+   ],
+   "container-title": "江南古籍資料館",
+   "URL": "https://example.org/zh/guide",
+   "issued": {
+    "date-parts": [
+     [
+      2024,
+      3,
+      1
+     ]
+    ]
+   },
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ],
+ "ko": [
+  {
+   "id": "s-ko-book-1",
+   "type": "book",
+   "language": "ko",
+   "title": "조선 후기 과학 기술사",
+   "author": [
+    {
+     "family": "김",
+     "given": "민수"
+    }
+   ],
+   "publisher": "한강출판사",
+   "publisher-place": "서울",
+   "issued": {
+    "date-parts": [
+     [
+      2018
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-ko-chapter-1",
+   "type": "chapter",
+   "language": "ko",
+   "title": "실학자의 천문 관측 기록",
+   "author": [
+    {
+     "family": "이",
+     "given": "서연"
+    }
+   ],
+   "editor": [
+    {
+     "family": "박",
+     "given": "준호"
+    }
+   ],
+   "container-title": "동아시아 과학사의 새로운 시각",
+   "publisher": "한강출판사",
+   "publisher-place": "서울",
+   "issued": {
+    "date-parts": [
+     [
+      2020
+     ]
+    ]
+   },
+   "page": "101-134"
+  },
+  {
+   "id": "s-ko-article-1",
+   "type": "article-journal",
+   "language": "ko",
+   "title": "디지털 인문학과 고문서 연구",
+   "author": [
+    {
+     "family": "최",
+     "given": "지훈"
+    },
+    {
+     "family": "정",
+     "given": "하은"
+    }
+   ],
+   "container-title": "한강역사정보연구",
+   "volume": "25",
+   "issue": "2",
+   "issued": {
+    "date-parts": [
+     [
+      2022
+     ]
+    ]
+   },
+   "page": "33-58"
+  },
+  {
+   "id": "s-ko-web-1",
+   "type": "webpage",
+   "language": "ko",
+   "title": "고문헌 데이터베이스 이용 안내",
+   "author": [
+    {
+     "literal": "한강고전자료관"
+    }
+   ],
+   "container-title": "한강고전자료관",
+   "URL": "https://example.org/ko/guide",
+   "issued": {
+    "date-parts": [
+     [
+      2024
+     ]
+    ]
+   },
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ],
+ "ru": [
+  {
+   "id": "s-ru-book-1",
+   "type": "book",
+   "language": "ru",
+   "title": "История Петербургской академии наук в XVIII веке",
+   "author": [
+    {
+     "family": "Иванов",
+     "given": "Иван Петрович"
+    }
+   ],
+   "publisher": "Речное издательство",
+   "publisher-place": "М.",
+   "issued": {
+    "date-parts": [
+     [
+      2017
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-ru-chapter-1",
+   "type": "chapter",
+   "language": "ru",
+   "title": "Академические экспедиции и описание империи",
+   "author": [
+    {
+     "family": "Смирнова",
+     "given": "Анна Сергеевна"
+    }
+   ],
+   "editor": [
+    {
+     "family": "Кузнецов",
+     "given": "Олег Викторович"
+    }
+   ],
+   "container-title": "Наука и государство в России",
+   "publisher": "Речное издательство",
+   "publisher-place": "СПб.",
+   "issued": {
+    "date-parts": [
+     [
+      2019
+     ]
+    ]
+   },
+   "page": "55-82"
+  },
+  {
+   "id": "s-ru-article-1",
+   "type": "article-journal",
+   "language": "ru",
+   "title": "Цифровые методы в изучении архивных источников",
+   "author": [
+    {
+     "family": "Петров",
+     "given": "Сергей Алексеевич"
+    },
+    {
+     "family": "Волкова",
+     "given": "Мария Ивановна"
+    }
+   ],
+   "container-title": "Речной исторический вестник",
+   "volume": "8",
+   "issue": "2",
+   "issued": {
+    "date-parts": [
+     [
+      2021
+     ]
+    ]
+   },
+   "page": "15-34"
+  },
+  {
+   "id": "s-ru-web-1",
+   "type": "webpage",
+   "language": "ru",
+   "title": "Электронный каталог архивных фондов",
+   "author": [
+    {
+     "literal": "Речной архив исторических документов"
+    }
+   ],
+   "container-title": "Речной архив исторических документов",
+   "URL": "https://example.org/ru/catalog",
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ],
+ "fr": [
+  {
+   "id": "s-fr-book-1",
+   "type": "book",
+   "language": "fr",
+   "title": "Les savants et le roi : l’Académie des sciences au XVIIIe siècle",
+   "author": [
+    {
+     "family": "Martin",
+     "given": "Claire"
+    }
+   ],
+   "publisher": "Éditions du Littoral",
+   "publisher-place": "Paris",
+   "issued": {
+    "date-parts": [
+     [
+      2016
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-fr-chapter-1",
+   "type": "chapter",
+   "language": "fr",
+   "title": "Les arts et métiers sous le regard des académiciens",
+   "author": [
+    {
+     "family": "Lefèvre",
+     "given": "Antoine"
+    }
+   ],
+   "editor": [
+    {
+     "family": "Bernard",
+     "given": "Sophie"
+    }
+   ],
+   "container-title": "Savoirs techniques à l’époque moderne",
+   "publisher": "Presses du Littoral",
+   "publisher-place": "Lyon",
+   "issued": {
+    "date-parts": [
+     [
+      2018
+     ]
+    ]
+   },
+   "page": "87-112"
+  },
+  {
+   "id": "s-fr-article-1",
+   "type": "article-journal",
+   "language": "fr",
+   "title": "Inventeurs et privilèges dans la France d’Ancien Régime",
+   "author": [
+    {
+     "family": "Dubois",
+     "given": "Marc"
+    },
+    {
+     "family": "Roux",
+     "given": "Julie"
+    }
+   ],
+   "container-title": "Cahiers du Littoral d’histoire des techniques",
+   "volume": "45",
+   "issue": "2",
+   "issued": {
+    "date-parts": [
+     [
+      2020
+     ]
+    ]
+   },
+   "page": "23-49"
+  },
+  {
+   "id": "s-fr-web-1",
+   "type": "webpage",
+   "language": "fr",
+   "title": "Guide des fonds d’archives numérisés",
+   "author": [
+    {
+     "literal": "Bibliothèque du Littoral"
+    }
+   ],
+   "container-title": "Bibliothèque du Littoral",
+   "URL": "https://example.org/fr/guide",
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ],
+ "de": [
+  {
+   "id": "s-de-book-1",
+   "type": "book",
+   "language": "de",
+   "title": "Gelehrte Gesellschaften im Zeitalter der Aufklärung",
+   "author": [
+    {
+     "family": "Schneider",
+     "given": "Thomas"
+    }
+   ],
+   "publisher": "Verlag am Fluss",
+   "publisher-place": "Göttingen",
+   "issued": {
+    "date-parts": [
+     [
+      2015
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-de-chapter-1",
+   "type": "chapter",
+   "language": "de",
+   "title": "Handwerk und Wissenschaft im 18. Jahrhundert",
+   "author": [
+    {
+     "family": "Fischer",
+     "given": "Anna"
+    }
+   ],
+   "editor": [
+    {
+     "family": "Weber",
+     "given": "Michael"
+    }
+   ],
+   "container-title": "Wissenskulturen der Frühen Neuzeit",
+   "publisher": "Verlag am Fluss",
+   "publisher-place": "Berlin",
+   "issued": {
+    "date-parts": [
+     [
+      2019
+     ]
+    ]
+   },
+   "page": "65-90"
+  },
+  {
+   "id": "s-de-article-1",
+   "type": "article-journal",
+   "language": "de",
+   "title": "Akademien und Staat. Eine vergleichende Perspektive",
+   "author": [
+    {
+     "family": "Becker",
+     "given": "Lukas"
+    },
+    {
+     "family": "Hoffmann",
+     "given": "Eva"
+    }
+   ],
+   "container-title": "Mitteilungen des Akademiearchivs am Fluss",
+   "volume": "38",
+   "issue": "1",
+   "issued": {
+    "date-parts": [
+     [
+      2022
+     ]
+    ]
+   },
+   "page": "11-36"
+  },
+  {
+   "id": "s-de-web-1",
+   "type": "webpage",
+   "language": "de",
+   "title": "Digitale Edition der Akademieprotokolle",
+   "author": [
+    {
+     "literal": "Akademiearchiv am Fluss"
+    }
+   ],
+   "container-title": "Akademiearchiv am Fluss",
+   "URL": "https://example.org/de/edition",
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ],
+ "ar": [
+  {
+   "id": "s-ar-book-1",
+   "type": "book",
+   "language": "ar",
+   "title": "تاريخ العلوم في العصر العباسي",
+   "author": [
+    {
+     "family": "الحسيني",
+     "given": "أحمد"
+    }
+   ],
+   "publisher": "دار الساحل",
+   "publisher-place": "بيروت",
+   "issued": {
+    "date-parts": [
+     [
+      2014
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-ar-chapter-1",
+   "type": "chapter",
+   "language": "ar",
+   "title": "المخطوطات العلمية في مكتبات المغرب",
+   "author": [
+    {
+     "family": "العلوي",
+     "given": "فاطمة"
+    }
+   ],
+   "editor": [
+    {
+     "family": "الزين",
+     "given": "خالد"
+    }
+   ],
+   "container-title": "دراسات في تراث العلوم",
+   "publisher": "دار الساحل",
+   "publisher-place": "القاهرة",
+   "issued": {
+    "date-parts": [
+     [
+      2017
+     ]
+    ]
+   },
+   "page": "61-88"
+  },
+  {
+   "id": "s-ar-article-1",
+   "type": "article-journal",
+   "language": "ar",
+   "title": "الإنسانيات الرقمية ودراسة المخطوطات",
+   "author": [
+    {
+     "family": "حسن",
+     "given": "محمد"
+    },
+    {
+     "family": "يوسف",
+     "given": "ليلى"
+    }
+   ],
+   "container-title": "مجلة الساحل للدراسات التاريخية",
+   "volume": "15",
+   "issue": "1",
+   "issued": {
+    "date-parts": [
+     [
+      2021
+     ]
+    ]
+   },
+   "page": "120-135"
+  },
+  {
+   "id": "s-ar-web-1",
+   "type": "webpage",
+   "language": "ar",
+   "title": "دليل استخدام قاعدة بيانات المخطوطات",
+   "author": [
+    {
+     "literal": "مركز الساحل للتراث"
+    }
+   ],
+   "container-title": "مركز الساحل للتراث",
+   "URL": "https://example.org/ar/guide",
+   "issued": {
+    "date-parts": [
+     [
+      2024,
+      5,
+      2
+     ]
+    ]
+   },
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ],
+ "it": [
+  {
+   "id": "s-it-book-1",
+   "type": "book",
+   "language": "it",
+   "title": "Accademie e scienza nell’Italia del Settecento",
+   "author": [
+    {
+     "family": "Rossi",
+     "given": "Giulia"
+    }
+   ],
+   "publisher": "Edizioni del Lago",
+   "publisher-place": "Milano",
+   "issued": {
+    "date-parts": [
+     [
+      2016
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-it-chapter-1",
+   "type": "chapter",
+   "language": "it",
+   "title": "Gli strumenti scientifici nelle collezioni medicee",
+   "author": [
+    {
+     "family": "Bianchi",
+     "given": "Marco"
+    }
+   ],
+   "editor": [
+    {
+     "family": "Romano",
+     "given": "Paola"
+    }
+   ],
+   "container-title": "Musei e saperi in età moderna",
+   "publisher": "Edizioni del Lago",
+   "publisher-place": "Firenze",
+   "issued": {
+    "date-parts": [
+     [
+      2019
+     ]
+    ]
+   },
+   "page": "77-104"
+  },
+  {
+   "id": "s-it-article-1",
+   "type": "article-journal",
+   "language": "it",
+   "title": "Inventori e privilegi nella Repubblica di Venezia",
+   "author": [
+    {
+     "family": "Ricci",
+     "given": "Luca"
+    },
+    {
+     "family": "Greco",
+     "given": "Elena"
+    }
+   ],
+   "container-title": "Quaderni del Lago di storia della tecnica",
+   "volume": "41",
+   "issue": "2",
+   "issued": {
+    "date-parts": [
+     [
+      2020
+     ]
+    ]
+   },
+   "page": "201-226"
+  },
+  {
+   "id": "s-it-web-1",
+   "type": "webpage",
+   "language": "it",
+   "title": "Catalogo digitale dei manoscritti",
+   "author": [
+    {
+     "literal": "Biblioteca del Lago"
+    }
+   ],
+   "container-title": "Biblioteca del Lago",
+   "URL": "https://example.org/it/catalogo",
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ],
+ "es": [
+  {
+   "id": "s-es-book-1",
+   "type": "book",
+   "language": "es",
+   "title": "Ciencia y monarquía en la España ilustrada",
+   "author": [
+    {
+     "family": "García López",
+     "given": "Carmen"
+    }
+   ],
+   "publisher": "Ediciones del Puerto",
+   "publisher-place": "Madrid",
+   "issued": {
+    "date-parts": [
+     [
+      2017
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-es-chapter-1",
+   "type": "chapter",
+   "language": "es",
+   "title": "Expediciones botánicas y administración colonial",
+   "author": [
+    {
+     "family": "Martínez Ruiz",
+     "given": "Pablo"
+    }
+   ],
+   "editor": [
+    {
+     "family": "Sánchez Díaz",
+     "given": "Lucía"
+    }
+   ],
+   "container-title": "Saberes y poder en el mundo hispánico",
+   "publisher": "Ediciones del Puerto",
+   "publisher-place": "Sevilla",
+   "issued": {
+    "date-parts": [
+     [
+      2020
+     ]
+    ]
+   },
+   "page": "143-170"
+  },
+  {
+   "id": "s-es-article-1",
+   "type": "article-journal",
+   "language": "es",
+   "title": "Los ingenieros militares y la cartografía del siglo XVIII",
+   "author": [
+    {
+     "family": "Fernández Gil",
+     "given": "Javier"
+    },
+    {
+     "family": "Moreno Vega",
+     "given": "Ana"
+    }
+   ],
+   "container-title": "Cuadernos del Puerto de Historia de la Técnica",
+   "volume": "33",
+   "issue": "1",
+   "issued": {
+    "date-parts": [
+     [
+      2021
+     ]
+    ]
+   },
+   "page": "45-72"
+  },
+  {
+   "id": "s-es-web-1",
+   "type": "webpage",
+   "language": "es",
+   "title": "Guía de fondos documentales digitalizados",
+   "author": [
+    {
+     "literal": "Archivo del Puerto"
+    }
+   ],
+   "container-title": "Archivo del Puerto",
+   "URL": "https://example.org/es/guia",
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ],
+ "tr": [
+  {
+   "id": "s-tr-book-1",
+   "type": "book",
+   "language": "tr",
+   "title": "Osmanlı Devleti’nde Bilim ve Teknik",
+   "author": [
+    {
+     "family": "Yılmaz",
+     "given": "Ayşe"
+    }
+   ],
+   "publisher": "Liman Yayınları",
+   "publisher-place": "İstanbul",
+   "issued": {
+    "date-parts": [
+     [
+      2018
+     ]
+    ]
+   }
+  },
+  {
+   "id": "s-tr-chapter-1",
+   "type": "chapter",
+   "language": "tr",
+   "title": "Rasathane Kayıtları ve Astronomi Geleneği",
+   "author": [
+    {
+     "family": "Demir",
+     "given": "Mehmet"
+    }
+   ],
+   "editor": [
+    {
+     "family": "Kaya",
+     "given": "Zeynep"
+    }
+   ],
+   "container-title": "Osmanlı Bilim Tarihine Yeni Bakışlar",
+   "publisher": "Liman Yayınları",
+   "publisher-place": "Ankara",
+   "issued": {
+    "date-parts": [
+     [
+      2020
+     ]
+    ]
+   },
+   "page": "89-115"
+  },
+  {
+   "id": "s-tr-article-1",
+   "type": "article-journal",
+   "language": "tr",
+   "title": "Dijital Beşeri Bilimler ve Arşiv Belgeleri",
+   "author": [
+    {
+     "family": "Şahin",
+     "given": "Emre"
+    },
+    {
+     "family": "Çelik",
+     "given": "Elif"
+    }
+   ],
+   "container-title": "Liman Tarih Araştırmaları Dergisi",
+   "volume": "12",
+   "issue": "2",
+   "issued": {
+    "date-parts": [
+     [
+      2022
+     ]
+    ]
+   },
+   "page": "117-143"
+  },
+  {
+   "id": "s-tr-web-1",
+   "type": "webpage",
+   "language": "tr",
+   "title": "Dijital Arşiv Kullanım Kılavuzu",
+   "author": [
+    {
+     "literal": "Liman Arşivi"
+    }
+   ],
+   "container-title": "Liman Arşivi",
+   "URL": "https://example.org/tr/kilavuz",
+   "accessed": {
+    "date-parts": [
+     [
+      2026,
+      11,
+      1
+     ]
+    ]
+   }
+  }
+ ]
+}

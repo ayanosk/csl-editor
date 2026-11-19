@@ -132,10 +132,12 @@ def build(out: Path) -> None:
         f.stem.removeprefix("locales-"): read(f) for f in sorted(VENDOR.glob("locales-*.xml"))
     }
     samples = json.loads(read(SRC / "samples.json"))
+    lang_samples = json.loads(read(SRC / "samples_langs.json"))
     data = (
         comment_block("CSL locales (https://github.com/citation-style-language/locales), CC BY-SA 3.0")
         + "\nwindow.CSL_LOCALES = " + json.dumps(locales, ensure_ascii=False) + ";\n"
-        + "window.CSL_SAMPLES = " + json.dumps(samples, ensure_ascii=False) + ";"
+        + "window.CSL_SAMPLES = " + json.dumps(samples, ensure_ascii=False) + ";\n"
+        + "window.CSL_LANG_SAMPLES = " + json.dumps(lang_samples, ensure_ascii=False) + ";"
     )
     html = html.replace("<!-- @data -->", script(data))
 
