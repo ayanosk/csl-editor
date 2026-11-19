@@ -20,6 +20,7 @@
     volume: { label: '巻', kind: 'number', term: 'volume' },
     issue: { label: '号', kind: 'number', term: 'issue' },
     page: { label: '頁', kind: 'number', term: 'page' },
+    'page-first': { label: '頁（最初の頁だけ）', kind: 'number', term: 'page' },
     edition: { label: '版', kind: 'number', term: 'edition' },
     publisher: { label: '出版者', kind: 'text' },
     'publisher-place': { label: '出版地', kind: 'text' },
@@ -27,6 +28,15 @@
     accessed: { label: '参照日', kind: 'date', term: 'accessed' },
     URL: { label: 'URL', kind: 'text' },
     DOI: { label: 'DOI', kind: 'text' },
+    // 一次史料（原稿・文書・書簡）の部品。部品を足す欄では別の行にまとめる（group）。
+    // Zotero の欄：所蔵機関＝Archive、所蔵場所＝Loc. in Archive、請求記号＝Call Number、種類＝Type（原稿の種類・手紙の種類など）
+    archive: { label: '所蔵機関', kind: 'text', group: 'archive' },
+    archive_location: { label: '所蔵場所（文書群・番号）', kind: 'text', group: 'archive' },
+    'archive-place': { label: '所蔵機関の所在地', kind: 'text', group: 'archive' },
+    'call-number': { label: '請求記号', kind: 'text', group: 'archive' },
+    genre: { label: '資料の種類（書状・覚書など）', kind: 'text', group: 'archive' },
+    number: { label: '文書番号', kind: 'number', term: 'number', group: 'archive' },
+    recipient: { label: '宛先', kind: 'names', group: 'archive' },
     locator: { label: '引用箇所', kind: 'number', term: 'locator', citeOnly: true },
     'citation-number': { label: '番号', kind: 'number' },
     literal: { label: '任意の文字', kind: 'literal' },
@@ -92,6 +102,9 @@
     { key: 'translator', name: 'translator', form: 'short', num: 'single', label: '訳（1人）' },
     { key: 'translators', name: 'translator', form: 'short', num: 'multiple', label: '訳（複数）' },
     { key: 'translator-verb', name: 'translator', form: 'verb', label: '訳（前に置く形）' },
+    { key: 'recipient', name: 'recipient', form: 'short', label: '宛先（後ろに付ける形）' },
+    { key: 'recipient-verb', name: 'recipient', form: 'verb', label: '宛先（前に置く形）' },
+    { key: 'number', name: 'number', form: 'short', label: '文書番号' },
     { key: 'et-al', name: 'et-al', label: 'ほか' },
     { key: 'and', name: 'and', label: '最後の人名の前' },
     { key: 'accessed', name: 'accessed', label: '参照' },
@@ -139,7 +152,7 @@
       suffix: useQuotes ? '' : wc,
       quotes: useQuotes,
       'font-style': chip.italic ? 'italic' : '',
-      'text-case': chip.caps === 'capitalize-first' ? 'capitalize-first' : '',
+      'text-case': chip.caps === 'capitalize-first' || chip.caps === 'title' ? chip.caps : '',
     };
     let inner = '';
     // ラベルと値の間（p. 42 の空白）。部品ごとに上書きできる（公式のスタイルから移した p42 など）。
@@ -212,12 +225,14 @@
     if (!def.term || pos === 'none') return inner;
     let lab;
     const sp = (chip.opt || {}).stripPeriods ? 'true' : '';
+    // 用語が値の前に来るときは、部品の「先頭を大文字」を用語に効かせる（No. 27）
+    const tc = pos === 'before' && chip.caps === 'capitalize-first' ? 'capitalize-first' : '';
     if (def.term === 'page' || def.term === 'locator') {
-      lab = `<label${attrs({ variable: chip.f, form: 'short', 'strip-periods': sp })}/>`;
+      lab = `<label${attrs({ variable: chip.f, form: 'short', 'strip-periods': sp, 'text-case': tc })}/>`;
     } else if (def.term === 'accessed') {
-      lab = `<text term="accessed"/>`;
+      lab = `<text${attrs({ term: 'accessed', 'text-case': tc })}/>`;
     } else {
-      lab = `<text${attrs({ term: def.term, form: 'short', 'strip-periods': sp })}/>`;
+      lab = `<text${attrs({ term: def.term, form: 'short', 'strip-periods': sp, 'text-case': tc })}/>`;
     }
     const parts = pos === 'before' ? [lab, inner] : [inner, lab];
     return `<group${attrs({ delimiter: space })}>${parts.join('')}</group>`;

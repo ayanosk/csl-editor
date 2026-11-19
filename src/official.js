@@ -208,7 +208,7 @@
     const hasBib = /<bibliography[\s>]/.test(xml);
     if (hasBib) {
       const r = e.makeBibliography();
-      if (r) r[0].entry_ids.forEach((ids, k) => { bib[ids[0]] = r[1][k].replace(/^\s*<div class="csl-entry">/, '').replace(/<\/div>\s*$/, '').trim(); });
+      if (r) for (const [id, html] of Object.entries(bibEntries(r))) bib[id] = html.replace(/^\s*<div class="csl-entry">/, '').replace(/<\/div>\s*$/, '').trim();
     }
     const note = /<style[^>]*\sclass="note"/.test(xml);
     const out = {};
@@ -255,8 +255,9 @@
     author: '著者', editor: '編者', translator: '訳者', 'container-author': '収録書の著者', 'collection-editor': '叢書の編者', composer: '著者など', director: '監督',
     title: '題名', 'title-short': '短い題名', 'container-title': '掲載誌名・収録書名', 'container-title-short': '掲載誌の略称', 'collection-title': '叢書名',
     publisher: '出版者', 'publisher-place': '出版地', issued: '発行年月日', accessed: '参照日', URL: 'URL', DOI: 'DOI', page: '掲載頁', locator: '引用頁',
-    volume: '巻', issue: '号', edition: '版', 'number-of-pages': '総頁数', 'number-of-volumes': '総巻数', genre: '種別', medium: '媒体', 'citation-number': '番号',
+    volume: '巻', issue: '号', edition: '版', 'number-of-pages': '総頁数', 'number-of-volumes': '総巻数', genre: '資料の種類', medium: '媒体', 'citation-number': '番号',
     'year-suffix': '年の添え字', status: '刊行状況', note: 'メモ', ISBN: 'ISBN', ISSN: 'ISSN',
+    archive: '所蔵機関', archive_location: '所蔵場所', 'archive-place': '所蔵機関の所在地', 'call-number': '請求記号', number: '番号', recipient: '宛先', 'page-first': '最初の頁',
   };
   const TAG_JA = { text: '文字', names: '名前', date: '日付', number: '数', label: 'ラベル', group: 'まとまり', layout: '全体' };
   function varLabel(v) { return String(v).split(/\s+/).map((x) => VAR_JA[x] || x).join('・'); }
@@ -304,7 +305,17 @@
   function isCsl(text) { return /<style[\s>][\s\S]*xmlns="http:\/\/purl\.org\/net\/xbiblio\/csl"/.test(text); }
   const titleOf = (xml) => unescape((xml.match(/<title>([^<]*)<\/title>/) || [])[1] || '');
 
-  const api = { parse, serialize, apply, instrument, attribute, align, decorate, renderRows, build, describe, macroOf, getAttr, finalize, isCsl, titleOf, index, indexEid, unitIn, MAXN };
+  // makeBibliography の結果 → { 文献の id: その行 }。スタイルが参考文献に載せない文献（Chicago の手紙・原稿など）は、
+  // entry_ids には残るが行の一覧からは抜け、bibliography_errors に載る。順番どおりに対応させると、後ろの行が1件ずつずれる。
+  function bibEntries(r) {
+    const skip = new Set(((r[0] && r[0].bibliography_errors) || []).map((x) => String(x.itemID)));
+    const out = {};
+    let k = 0;
+    for (const ids of r[0].entry_ids) if (!skip.has(String(ids[0]))) out[ids[0]] = r[1][k++];
+    return out;
+  }
+
+  const api = { bibEntries, parse, serialize, apply, instrument, attribute, align, decorate, renderRows, build, describe, macroOf, getAttr, finalize, isCsl, titleOf, index, indexEid, unitIn, MAXN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CSLOfficial = api;
 })(typeof window !== 'undefined' ? window : this);

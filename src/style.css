@@ -268,3 +268,7 @@ dialog form > .dlg-sec:first-of-type { border-top: none; padding-top: 0; }
 .off-actions .danger { color: var(--err-ink); }
 .off-edits { list-style: none; padding: 0; margin: 4px 0 8px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
 .off-edits li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* 項目の内容をコピーする（書く場所の切り替えの下） */
+.copy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; font-size: 13px; }
+.copy-row .lbl { color: var(--muted, #666); margin-right: 4px; }

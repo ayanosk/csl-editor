@@ -67,6 +67,8 @@
     // 和文の「ほか」の前に区切りを入れない（以前の型は指定が無く、「長岡・ほか」になっていた）。
     const jaNames = m.systems && m.systems.ja && m.systems.ja.names;
     if (jaNames && jaNames.precedesEtAl === undefined) jaNames.precedesEtAl = 'never';
+    // 宛先・文書番号の用語（一次史料の部品と一緒に足した）を、それより前のスタイルに補う。
+    ST.fillTerms(m);
     return m;
   }
   function freshModel(key) {
@@ -131,7 +133,7 @@
   };
   function termOf(key) { return termOfSys(state.ui.panel, key); }
   // 部品 → 添える用語（巻・号・頁・版・引用箇所・参照日）
-  const LABEL_TERM = { volume: 'volume', issue: 'issue', page: 'page', locator: 'page', edition: 'edition', accessed: 'accessed' };
+  const LABEL_TERM = { volume: 'volume', issue: 'issue', page: 'page', locator: 'page', edition: 'edition', accessed: 'accessed', number: 'number', 'page-first': 'page' };
   function fieldLabel(c) {
     if (c.t === 'open') return 'まとまりの始め〔';
     if (c.t === 'close') return 'まとまりの終わり〕';
@@ -275,6 +277,8 @@
             h('div', {}, h('span', { class: 'muted small', text: '組み直し：' }), d.converted)))));
       }
     }
+    const extra = state.model.typeTabs || [];
+    if (extra.length) box.append(h('p', { class: 'hint', text: `元のスタイルの種類ごとの書き分け（${extra.length}種類）も、それぞれのタブに移しました：${extra.map(G.cslTypeLabel).join('、')}。` }));
     if (rep.dropped && rep.dropped.length) box.append(h('p', { class: 'muted small', text: `部品に移せなかった書き方：${rep.dropped.join('、')}` }));
     return box;
   }
@@ -294,6 +298,13 @@
         type: 'button', 'aria-pressed': String(state.ui.target === k),
         onclick: () => { state.ui.target = k; state.ui.sel = null; renderPanels(); save(); },
       }, label)));
+    // ほかの書く場所の並びを、いま開いている場所（この種類だけ）に写す
+    const others = targets.filter(([k]) => k !== state.ui.target);
+    const copyFrom = h('select', { 'aria-label': '写す元' }, ...others.map(([k, l]) => h('option', { value: k, text: l })));
+    const copyRow = h('div', { class: 'copy-row' },
+      h('span', { class: 'lbl', text: '項目の内容をコピーする' }), copyFrom, h('span', { text: 'の並びを' }),
+      h('button', { type: 'button', class: 'small-btn', onclick: () => copyChips(copyFrom.value, others.find(([k]) => k === copyFrom.value)[1]) },
+        `「${targets.find(([k]) => k === state.ui.target)[1]}」に写す`));
     const tabs = G.tabsOf(state.model);
     const typeTabs = h('div', { class: 'type-tabs' },
       ...tabs.map((t) => h('button', {
@@ -308,12 +319,10 @@
       extra.push(h('p', { class: 'hint' },
         state.model.kind === 'note'
           ? (hasSubsequent() ? 'その本を初めて引く注の並びです。' : '注の並びです。') + 'プレビューの引用箇所は、上の「引用箇所」で選んだもので組みます。'
-          : '本文中の引用の並びです。括弧と区切りは「全体の設定」で変えます。',
-        ' ', h('button', { type: 'button', onclick: () => copyChips('bib', '参考文献') }, '参考文献の並びを写す')));
+          : '本文中の引用の並びです。括弧と区切りは「全体の設定」で変えます。'));
     } else if (state.ui.target === 'citeSub') {
       extra.push(h('p', { class: 'hint' },
-        '間に別の注を挟んで、同じ文書をもう一度引いたときの並びです（短縮形）。著者は「姓だけ」、題名は「短い形」にするのが一般的です。短い形には Zotero の「短いタイトル」欄が使われ、空なら題名がそのまま出ます。「前掲書」などは「任意の文字」で足せます。',
-        ' ', h('button', { type: 'button', onclick: () => copyChips('cite', '注（初出）') }, '注（初出）の並びを写す')),
+        '間に別の注を挟んで、同じ文書をもう一度引いたときの並びです（短縮形）。著者は「姓だけ」、題名は「短い形」にするのが一般的です。短い形には Zotero の「短いタイトル」欄が使われ、空なら題名がそのまま出ます。「前掲書」などは「任意の文字」で足せます。'),
         h('p', { class: 'hint' }, '型を選ぶ（この書式の全種類を置き換えます）：',
           ...(sk === 'ja'
             ? [['short', '山田『デジタル史料学入門』50頁'], ['prev', '山田、前掲書、50頁']]
@@ -321,12 +330,11 @@
             .map(([k, label]) => h('button', { type: 'button', class: 'small-btn', onclick: () => applySubPreset(k, label) }, label))));
     } else if (state.ui.target === 'citeIbid') {
       extra.push(h('p', { class: 'hint' },
-        '直前の注と同じ文書を引いたときの並びです。箇所が違えば引用箇所が付き（「同上、45頁。」）、箇所も同じなら引用箇所は自動で消えます（「同上。」）。「同上」を使わない書き方にするときは、2回目以降の並びを写してください。',
-        ' ', h('button', { type: 'button', onclick: () => copyChips('citeSub', '注（2回目以降）') }, '注（2回目以降）の並びを写す')));
+        '直前の注と同じ文書を引いたときの並びです。箇所が違えば引用箇所が付き（「同上、45頁。」）、箇所も同じなら引用箇所は自動で消えます（「同上。」）。「同上」を使わない書き方にするときは、2回目以降の並びを写してください。'));
     }
     // 上に資料の種類（図書・本の章…）、その下に書く場所（参考文献・注…）。プレビューの並びと同じ順。
     return h('div', {},
-      typeTabs, seg, row, paletteNode(),
+      typeTabs, seg, copyRow, row, paletteNode(),
       ...extra,
       h('div', { id: 'detail' }),
       systemCard(sk));
@@ -371,10 +379,14 @@
       const key = 'x-' + type;
       if (on) {
         // 並びが無ければ、いまその種類を組んでいるタブから写す。前に作った並びが残っていれば、それを使う。
+        // 原稿・文書・手紙は、型から作った注形式なら一次史料の並びで始める（公式のスタイルから移したものは写す）。
         const from = G.tabOfType(type, m);
-        for (const sys of Object.values(m.systems)) for (const tg of ST.TARGETS) {
+        const preset = m.kind === 'note' && !(m.source && m.source.kind === 'official');
+        for (const [sk, sys] of Object.entries(m.systems)) for (const tg of ST.TARGETS) {
           sys[tg] = sys[tg] || {};
-          if (!sys[tg][key]) sys[tg][key] = clone(sys[tg][from] || []).map((c) => { delete c.uid; return c; });
+          if (sys[tg][key]) continue;
+          const p = preset && (tg === 'bib' || tg === 'cite') ? ST.archivePreset(sk, type, tg) : null;
+          sys[tg][key] = p || clone(sys[tg][from] || []).map((c) => { delete c.uid; return c; });
         }
         m.typeTabs = (m.typeTabs || []).filter((t) => t !== type).concat(type);
         ensureUids(m);
@@ -401,7 +413,8 @@
   function hasSubsequent() { return state.model.kind === 'note' && !!state.model.subsequent; }
   function copyChips(from, fromLabel) {
     const { panel, tab, target } = state.ui;
-    if (!confirm(`この種類のいまの並びを、「${fromLabel}」の並びで置き換えます。よろしいですか。`)) return;
+    const tabLabel = (G.tabsOf(state.model).find((t) => t.key === tab) || {}).label || '';
+    if (!confirm(`「${tabLabel}」のいまの並びを、「${fromLabel}」の並びで置き換えます。ほかの種類は変わりません。よろしいですか。`)) return;
     const sys = state.model.systems[panel];
     const c = clone((sys[from] || {})[tab] || []);
     c.forEach((x) => { x.uid = 'c' + (++uidN); });
@@ -493,18 +506,22 @@
   function paletteNode() {
     const kind = state.model.kind;
     const target = state.ui.target;
-    const fieldBtns = Object.entries(G.FIELDS)
+    const btns = Object.entries(G.FIELDS)
       .filter(([k, d]) => !(d.citeOnly && target === 'bib'))
       .filter(([k]) => k !== 'citation-number' || kind === 'numeric')
-      .map(([k, d]) => h('button', {
+      .map(([k, d]) => [d.group, h('button', {
         type: 'button', title: '選んだ部品の後ろ（無ければ末尾）に足す',
         // DOI は、いまの主なスタイルの標準（https://doi.org/10.…）で足す。書き方は部品の設定で選び直せる。
         onclick: () => insertChip(ST.F(k, k === 'literal' ? { opt: { value: '' } } : k === 'DOI' ? { prefix: 'https://doi.org/' } : {})),
-      }, d.label));
+      }, d.label)]);
+    const fieldBtns = btns.filter(([g]) => !g).map(([, b]) => b);
+    const archiveBtns = btns.filter(([g]) => g === 'archive').map(([, b]) => b);
     const custom = h('input', { type: 'text', placeholder: '自由入力', 'aria-label': '区切りの自由入力' });
     const sepBtns = SEP_CHOICES.map(([v, label]) => h('button', { type: 'button', onclick: () => insertChip(ST.S(v)) }, label));
     return h('div', { class: 'palette' },
       h('span', { class: 'lbl', text: '部品を足す' }), h('div', { class: 'btns' }, fieldBtns),
+      h('span', { class: 'lbl', text: '一次史料の部品' }), h('div', { class: 'btns' }, archiveBtns,
+        h('span', { class: 'hint', text: 'Zotero の「所蔵機関（Archive）」「所蔵場所（Loc. in Archive）」「請求記号（Call Number）」「種類（Type）」「受取人」の欄です。原稿・文書・手紙の書式は、上の「項目の種類を選ぶ」でタブを足して作ります。' })),
       h('span', { class: 'lbl', text: 'まとめる' }), h('div', { class: 'btns' },
         h('button', { type: 'button', onclick: insertGroup, title: '選んだ部品を〔 〕で囲む（選んでいなければ末尾に足す）' }, '〔 〕で囲む'),
         h('span', { class: 'hint', text: '〔 〕の中が全部空の文献では、まとまりと、その前の区切りが消えます（「書名. 〔訳者, 出版者, 年〕」）。' })),
@@ -588,14 +605,17 @@
     add('括弧', select(Object.entries(WRAP_LABELS), () => c.wrap || 'none', (v) => { c.wrap = v; }));
     add('書体', h('span', {},
       check(() => c.italic, (v) => { c.italic = v; }, '斜体'), '　',
-      check(() => c.caps === 'capitalize-first', (v) => { c.caps = v ? 'capitalize-first' : 'none'; }, '先頭を大文字')));
+      check(() => c.caps === 'capitalize-first', (v) => { c.caps = v ? 'capitalize-first' : 'none'; renderDetail(); }, '先頭を大文字'), '　',
+      check(() => c.caps === 'title', (v) => { c.caps = v ? 'title' : 'none'; renderDetail(); }, '単語の頭を大文字（Title Case）')));
     if (def.kind === 'names') {
       add('名前の順', select([['given', '名 姓（そのまま）'], ['family', '最初の人だけ「姓, 名」'], ['family-all', '全員「姓, 名」']], () => o.order || 'given', (v) => { o.order = v; }));
       add('名前の形', select([['long', '姓名とも'], ['short', '姓だけ']], () => o.form || 'long', (v) => { o.form = v; }));
       if (c.f !== 'author') {
-        add('役割語', select([['none', '付けない'], ['after', '後ろに付ける（山田花子編）'], ['before', '前に付ける（edited by）']], () => o.role || 'none', (v) => { o.role = v; renderDetail(); }));
+        // 例は、いま開いている書式の用語表の値（編・訳・宛／ed.・trans.・to）
+        const short = termOf(c.f) || termOf(c.f + 's'), verb = termOf(c.f + '-verb');
+        add('役割語', select([['none', '付けない'], ['after', `後ろに付ける（山田花子${short}）`], ['before', `前に付ける（${verb} …）`]], () => o.role || 'none', (v) => { o.role = v; renderDetail(); }));
         if (o.role && o.role !== 'none') {
-          add('役割語の形', select([['short', '短い形（編・ed.・trans.）'], ['verb', '前に置く形（edited by）']], () => o.roleForm || (o.role === 'before' ? 'verb' : 'short'), (v) => { o.roleForm = v; }));
+          add('役割語の形', select([['short', `短い形（${short}）`], ['verb', `前に置く形（${verb}）`]], () => o.roleForm || (o.role === 'before' ? 'verb' : 'short'), (v) => { o.roleForm = v; }));
         }
       } else {
         add('著者が無いとき', check(() => o.substitute !== false, (v) => { o.substitute = v; }, '編者で代える（「山田太郎編」）'));
@@ -848,7 +868,7 @@
     }
     const [meta, entries] = bib;
     const order = meta.entry_ids.map((ids) => ids[0]);
-    const bibById = Object.fromEntries(order.map((id, k) => [id, entries[k]]));
+    const bibById = O.bibEntries(bib); // 参考文献に載らない文献があっても、行がずれないように
     const listed = new Set(order);
     const byId = Object.fromEntries(items.map((i) => [i.id, i]));
     // 並びは、種類のタブの順（図書・本の章・雑誌論文・ウェブページ・足した種類・その他）。
@@ -1028,7 +1048,8 @@
   // 種類は Zotero の全種類（CSL の種類ごとにまとめたもの）。欄の出し分けを決めてある種類以外は、全部の欄を出す。
   const ITEM_TYPES = G.CSL_TYPES.map((t) => [t.type, t.label]);
   const ITEM_TYPE_LABEL = Object.fromEntries(ITEM_TYPES);
-  const FIELD_KNOWN_TYPES = ['book', 'chapter', 'article-journal', 'paper-conference', 'webpage', 'thesis', 'report'];
+  const FIELD_KNOWN_TYPES = ['book', 'chapter', 'article-journal', 'paper-conference', 'webpage', 'thesis', 'report', 'manuscript', 'document', 'personal_communication'];
+  const ARCHIVAL = ['manuscript', 'document', 'personal_communication'];
   const ALL = null;
   // [項目, 見出し, 入れ方, 出す種類（null は全部）, 種類ごとの見出し, 例]
   const ITEM_FIELDS = [
@@ -1050,6 +1071,13 @@
     ['accessed', '参照日', 'date', ['webpage'], null, '例：2026-11-1'],
     ['URL', 'URL', 'text', ALL, null, ''],
     ['DOI', 'DOI', 'text', ['article-journal', 'chapter', 'paper-conference', 'book'], null, '例：10.1234/abcd'],
+    ['recipient', '受取人（宛先）', 'names', ['personal_communication'], null, ''],
+    ['genre', '種類', 'text', [...ARCHIVAL, 'thesis', 'report'], { manuscript: '原稿の種類', personal_communication: '手紙の種類', thesis: '学位', report: 'レポートの種類' }, '例：書状　覚書　mémoire'],
+    ['number', '番号', 'text', ['document', 'report'], null, ''],
+    ['archive', '所蔵機関', 'text', [...ARCHIVAL, 'book'], null, '例：越後史料館'],
+    ['archive_location', '所蔵場所', 'text', [...ARCHIVAL, 'book'], null, '文書群・箱・番号など（例：山田家文書 12-4）'],
+    ['call-number', '請求記号', 'text', [...ARCHIVAL, 'book'], null, ''],
+    ['archive-place', '所蔵機関の所在地', 'text', ARCHIVAL, null, ''],
     ['note', 'その他（Extra）', 'lines', ALL, null, '五十音順に並べるときの読み。1行目にひらがなで（例：やまだ はなこ）'],
   ];
 
@@ -1069,6 +1097,9 @@
     post: REQ_WEB,
     thesis: ['author', 'title', 'publisher', 'issued'],
     report: ['author', 'title', 'publisher', 'issued'],
+    manuscript: ['title', 'issued', 'archive'],
+    document: ['title', 'issued', 'archive'],
+    personal_communication: ['author', 'recipient', 'issued'],
   };
   function requiredOf(type) { return new Set([...MUST, ...(REQUIRED[type] || ['author', 'title', 'issued'])]); }
 
@@ -1809,6 +1840,8 @@
     $('btnHelp').addEventListener('click', () => $('dlgHelp').showModal());
     $('btnChangelog').addEventListener('click', () => $('dlgChangelog').showModal());
     $('btnAddItem').addEventListener('click', openItemList);
+    // 待たずに組み直す（変更がすぐに映らないときのため）
+    $('btnRefresh').addEventListener('click', () => { clearTimeout(timer); renderPreview(); toast('プレビューを組み直しました'); });
     $('btnNewItem').addEventListener('click', () => { $('dlgItemList').close(); openItemEditor(null); });
     // 入力欄で Enter を押しても、入れかけの文献が閉じて消えないようにする。
     $('itemForm').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.preventDefault(); });
