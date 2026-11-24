@@ -61,6 +61,7 @@ node tests/convert.js             # 公式のスタイルを部品に移す（�
 node tests/reading_sort.js        # 読みで五十音順に並べる（Extra 欄の1行目。欧文は著者名）
 node tests/archive.js             # 一次史料の部品：原稿・文書・手紙のタブを足したときの並び
 node tests/volumes.js             # 総巻数の部品（全5巻・5 vols.）と、用語「巻（複数）」の補い
+node tests/lang_copy.js           # 言語を足すときの写す元（いまの書式・既定の書式）と、引用箇所の頁の語の一括設定
 bash tests/browser/run_all.sh     # ヘッドレスの Chrome で画面を操作する検証
 ```
 

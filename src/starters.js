@@ -516,26 +516,42 @@
   }
 
   // 言語を足す。preset に LANG_PRESETS の id を渡すと、その言語の既定の書式で作る。
-  // 渡さなければ、いまの欧文の書式を写す。うまくいけば null、だめなら理由の文を返す。
-  function addLanguage(model, key, preset) {
+  // 渡さなければ、from に指定した書式を写す。from は 'en' 'ja' や足した言語のコード（いまのその書式を、用語ごと写す）か、
+  // 'preset:<LANG_PRESETS の id>'（その言語の既定の書式。フランス語の形をラテン語に使うなど）。省けば欧文の書式。
+  // うまくいけば null、だめなら理由の文を返す。
+  function addLanguage(model, key, preset, from) {
     const p = preset ? LANG_PRESETS.find((x) => x.id === preset) : null;
     const k = p ? p.lang : String(key || '').trim().toLowerCase();
     if (!/^[a-z]{2,3}$/.test(k)) return '言語コードは、Zotero の「言語」欄の先頭の2〜3文字（fr、de など）で入れてください。';
     if (k === 'ja' || k === 'en') return `${k} は「${langName(k)}の書式」として最初からあります。`;
     model.extraLangs = model.extraLangs || [];
     if (model.extraLangs.includes(k)) return `${langName(k)}（${k}）の書式はもうあります。別の形にしたいときは、いまの書式を消してから足してください。`;
+    const fromPreset = !p && typeof from === 'string' && from.startsWith('preset:') ? LANG_PRESETS.find((x) => x.id === from.slice(7)) : null;
+    if (!p && from && !fromPreset && !model.systems[from]) return `写す元の書式（${from}）が見つかりません。`;
+    const src = p || fromPreset;
+    const base = src ? null : (from || 'en');
+    model.terms = model.terms || {};
     let sys;
-    if (p) sys = presetSystem(p, model);
-    else {
-      sys = clone(model.systems.en);
+    if (src) {
+      sys = presetSystem(src, model);
+      if (!p) sys.label = langName(k);
+    } else {
+      sys = clone(model.systems[base]);
       sys.label = langName(k);
       for (const tg of TARGETS) for (const tab of Object.keys(sys[tg] || {})) sys[tg][tab].forEach((c) => { delete c.uid; });
     }
+    // 欧文の書式で組む言語に入っていれば外す（この言語は自分の書式で組む）。書式を消したら戻せるよう、外したことを覚えておく。
+    if ((model.euroLangs || []).includes(k)) {
+      model.euroLangs = model.euroLangs.filter((l) => l !== k);
+      sys.fromEuro = true;
+    }
     model.systems[k] = sys;
-    model.terms = model.terms || {};
-    model.terms[k] = p ? { ...TERMS_EN, ...p.terms } : { ...TERMS_EN, ...(model.terms.en || {}), ...(LANG_TERMS[k] || {}) };
+    if (src) model.terms[k] = { ...TERMS_EN, ...src.terms };
+    // 欧文から写すときは、その言語の用語の初期値があれば重ねる（fr なら p.・éd. など）。ほかの書式から写すときは、用語もそのまま写す
+    else if (base === 'en') model.terms[k] = { ...TERMS_EN, ...(model.terms.en || {}), ...(LANG_TERMS[k] || {}) };
+    else model.terms[k] = { ...(base === 'ja' ? TERMS_JA : TERMS_EN), ...(model.terms[base] || {}) };
     // 既定の書式の用語に複数の巻が無ければ、英語の vols. ではなく1巻の語を使う（中国語の「卷」など）
-    if (p && p.terms.volumes === undefined) model.terms[k].volumes = model.terms[k].volume;
+    if (src && src.terms.volumes === undefined) model.terms[k].volumes = model.terms[k].volume;
     model.extraLangs.push(k);
     return null;
   }
@@ -572,15 +588,40 @@
     return [...head, S(sep), ...ARCHIVE_EN()];
   }
 
+  // ---- 引用箇所の頁の語を、書式全体で揃える ----
+  // 注・本文中の引用（初出・2回目以降・同上）の、全種類の引用箇所の部品の「用語」を pos（none・before・after）にする。
+  // 1頁か範囲かで語が変わる（p. 42・pp. 42–45）のは用語表の「頁（1頁）」「頁（範囲）」による。変えた部品の数を返す。
+  const CITE_TARGETS = ['cite', 'citeSub', 'citeIbid'];
+  function locatorChips(sys) {
+    const out = [];
+    for (const tg of CITE_TARGETS) for (const chips of Object.values((sys && sys[tg]) || {})) for (const c of chips || []) if (c.t === 'field' && c.f === 'locator') out.push(c);
+    return out;
+  }
+  function setLocatorLabel(sys, pos) {
+    const list = locatorChips(sys);
+    for (const c of list) {
+      c.opt = c.opt || {};
+      if (pos === 'none') delete c.opt.label; else c.opt.label = pos;
+    }
+    return list.length;
+  }
+  // いまの揃い方：全部同じならその値、ばらばらなら 'mixed'、引用箇所の部品が無ければ null。
+  function locatorLabelOf(sys) {
+    const v = [...new Set(locatorChips(sys).map((c) => (c.opt && c.opt.label) || 'none'))];
+    return v.length === 0 ? null : v.length === 1 ? v[0] : 'mixed';
+  }
+
   function removeLanguage(model, key) {
     model.extraLangs = (model.extraLangs || []).filter((k) => k !== key);
     if (key !== 'ja' && key !== 'en') {
+      // 足したときに欧文の書式で組む言語から外していたなら、戻す（消したあとも欧文の書式で組まれる）
+      if (model.systems[key] && model.systems[key].fromEuro && !(model.euroLangs || []).includes(key)) model.euroLangs = [...(model.euroLangs || ['en']), key];
       delete model.systems[key];
       if (model.terms) delete model.terms[key];
     }
   }
 
-  const api = { STARTERS, makeStarter, F, S, Grp, TARGETS, ensureSubsequent, fillTerms, archivePreset, subPreset, LANG_NAMES, BUNDLED_LOCALES, LANG_PRESETS, langName, addLanguage, removeLanguage };
+  const api = { STARTERS, makeStarter, F, S, Grp, TARGETS, ensureSubsequent, fillTerms, archivePreset, subPreset, LANG_NAMES, BUNDLED_LOCALES, LANG_PRESETS, langName, addLanguage, removeLanguage, setLocatorLabel, locatorLabelOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CSLStarters = api;
 })(typeof self !== 'undefined' ? self : this);
