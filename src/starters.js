@@ -67,7 +67,8 @@
   };
 
   // ---- 欧文 APA（第7版） ----
-  const APA_NAMES = { ...EN_NAMES, and: 'symbol', initialize: true, etAlMin: 21, etAlUseFirst: 19 };
+  // APA：参考文献は20人まで全員、本文中の引用は3人以上なら筆頭1人＋et al.
+  const APA_NAMES = { ...EN_NAMES, and: 'symbol', initialize: true, etAlMin: 21, etAlUseFirst: 19, citeEtAl: true, citeEtAlMin: 3, citeEtAlUseFirst: 1 };
   const APA_BIB = {
     book: [F('author', { opt: { order: 'family-all' } }), S(' '), F('issued', { prefix: '(', suffix: ')' }), S('. '), F('title', { italic: true }), S(' '), F('translator', { prefix: '(', suffix: ')', opt: { role: 'after' } }), S('. '), F('publisher')],
     chapter: [F('author', { opt: { order: 'family-all' } }), S(' '), F('issued', { prefix: '(', suffix: ')' }), S('. '), F('title'), S('. '), ...Grp([F('editor', { suffix: ' (Ed.)' }), S(', '), F('container-title', { italic: true }), S(' '), F('page', { prefix: '(', suffix: ')', opt: { label: 'before' } })], 'In '), S('. '), F('publisher')],
