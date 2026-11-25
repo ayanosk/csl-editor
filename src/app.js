@@ -72,6 +72,13 @@
     if (jaNames && jaNames.precedesEtAl === undefined) jaNames.precedesEtAl = 'never';
     // 宛先・文書番号の用語（一次史料の部品と一緒に足した）を、それより前のスタイルに補う。
     ST.fillTerms(m);
+    // 言語ごとの書式を持つ言語を、「欧文の書式で組む言語」から外す（以前の版は足しても欄に残していた。組版はもともと書式が優先）。
+    for (const k of G.extraLangs(m)) {
+      if ((m.euroLangs || []).includes(k) && m.systems[k]) {
+        m.euroLangs = m.euroLangs.filter((l) => l !== k);
+        m.systems[k].fromEuro = true;
+      }
+    }
     return m;
   }
   function freshModel(key) {
@@ -664,6 +671,23 @@
     add('「' + (termOfSys(sk, 'et-al') || 'ほか') + '」の前', sel(n, 'precedesEtAl', [['never', '区切りを入れない'], ['contextual', '2人以上出すときだけ区切りを入れる'], ['always', 'いつも区切りを入れる']]));
     add('欧文の名', h('label', {}, h('input', { type: 'checkbox', checked: !!n.initialize, onchange: (e) => { n.initialize = e.target.checked; changed({ row: false }); } }), ' 頭文字にする（J. Smith）'));
     if (sk !== 'ja') add('欧文の姓', sel(n, 'familyCase', [['', 'そのまま（Dubois）'], ['uppercase', 'すべて大文字（DUBOIS）'], ['small-caps', 'スモールキャピタル（頭だけ大きく、残りは小さな大文字）']]));
+    // 引用箇所の頁の語を、全種類の注・本文中の引用（初出・2回目以降・同上）でまとめて揃える。部品ごとの「用語」を書き換える。
+    const locNow = ST.locatorLabelOf(S);
+    if (locNow) {
+      const p1 = termOfSys(sk, 'page'), pN = termOfSys(sk, 'pages');
+      const sp = S.labelSpace || '';
+      const choices = [['none', '付けない（42・42-45）'], ['before', `前に付ける（${p1}${sp}42・${pN}${sp}42-45）`], ['after', `後ろに付ける（42${sp}${p1}・42-45${sp}${pN}）`]];
+      const locSel = h('select', { class: 'loc-label', onchange: (e) => {
+        if (e.target.value === 'mixed') return;
+        ST.setLocatorLabel(S, e.target.value);
+        renderPanels();
+        changed({ row: false });
+      } }, ...choices.map(([v, l]) => h('option', { value: v, text: l })),
+      ...(locNow === 'mixed' ? [h('option', { value: 'mixed', text: '部品ごとに違う（選ぶと全部を揃えます）' })] : []));
+      locSel.value = locNow;
+      add('引用箇所の頁の語', h('span', {}, locSel,
+        h('span', { class: 'muted small', text: `　1頁なら「${p1}」、範囲（42-45 など）なら「${pN}」。語は用語表の「頁（1頁）」「頁（範囲）」で変えられます。章・節には、付けないを選んでも語が付きます` })));
+    }
     add('参考文献の文末', inp(S.layout.bib, 'suffix'));
     if (state.model.kind === 'note') add('注の文末', inp(S.layout.cite, 'suffix'));
     // 縦書き向け：巻・号・頁・版・引用箇所を漢数字にする（和文と、中国語・韓国語の書式）
@@ -766,16 +790,25 @@
     const extras = G.extraLangs(m);
     const input = h('input', { id: 'newLang', type: 'text', placeholder: '例：fr', size: 6,
       onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); addLang(); } } });
-    // preset に LANG_PRESETS の id を渡すと、その言語の既定の書式で足す。渡さなければ欧文の書式を写す。
+    // 写す元：いまある書式（欧文・和文・足した言語）か、一覧の言語の既定の書式（フランス語の形をラテン語に使うなど）。
+    const sources = [
+      ...sysKeys().map((sk) => [sk, `いまの${sk === 'ja' || sk === 'en' ? sysName(sk) : `${sysName(sk)}（${sk}）`}の書式`]),
+      ...ST.LANG_PRESETS.map((p) => ['preset:' + p.id, `${p.name}の既定の書式`]),
+    ];
+    const fromSel = h('select', { 'aria-label': '写す元', id: 'newLangFrom' }, ...sources.map(([v, l]) => h('option', { value: v, text: l })));
+    fromSel.value = 'en';
+    // preset に LANG_PRESETS の id を渡すと、その言語の既定の書式で足す。渡さなければ、選んだ写す元の書式を写す。
     const addLang = (preset) => {
-      const err = ST.addLanguage(m, preset ? null : input.value, preset);
+      const from = preset ? null : fromSel.value;
+      const err = ST.addLanguage(m, preset ? null : input.value, preset, from);
       if (err) { alert(err); if (!preset) input.focus(); return; }
       const k = m.extraLangs[m.extraLangs.length - 1];
       ensureUids(m);
       state.ui.panel = k; state.ui.sel = null;
       renderPanels();
       changed({ row: false });
-      toast(preset ? `${m.systems[k].label}（${k}）の書式を足しました` : `${sysName(k)}（${k}）の書式を足しました。いまの欧文の書式を写してあります`);
+      const fromLabel = preset ? '' : (sources.find(([v]) => v === from) || [, ''])[1];
+      toast(preset ? `${m.systems[k].label}（${k}）の書式を足しました` : `${sysName(k)}（${k}）の書式を足しました。${fromLabel}を写してあります`);
     };
     const presetList = h('div', { class: 'preset-list' }, ...ST.LANG_PRESETS.map((p) => {
       const have = extras.includes(p.lang);
@@ -788,7 +821,8 @@
         h('b', { text: `${sysName(k)}（${k}）` }), ' ',
         h('button', { type: 'button', onclick: () => { state.ui.panel = k; state.ui.sel = null; renderPanels(); save(); } }, '開く'), ' ',
         h('button', { type: 'button', onclick: () => {
-          if (!confirm(`${sysName(k)}（${k}）の書式を消します。この言語の文献は、また欧文（または和文）の書式で組まれます。よろしいですか。`)) return;
+          const back = (m.systems[k] && m.systems[k].fromEuro) || (m.euroLangs || ['en']).includes(k);
+          if (!confirm(`${sysName(k)}（${k}）の書式を消します。この言語の文献は、${back ? '欧文の書式で組まれます（「欧文の書式で組む言語」に戻します）' : '和文の書式で組まれます（欧文の書式で組みたいときは、「欧文の書式で組む言語」に足してください）'}。よろしいですか。`)) return;
           ST.removeLanguage(m, k);
           renderPanels();
           changed({ row: false });
@@ -800,8 +834,9 @@
       list,
       h('h4', { class: 'sub-head', text: '言語を選んで足す' }),
       presetList,
-      h('details', { class: 'lang-other' }, h('summary', { text: '一覧にない言語を足す（欧文の書式を写す）' }),
-        h('div', { class: 'lang-add' }, '言語コード ', input, ' ', h('button', { type: 'button', onclick: () => addLang() }, '足す'))));
+      h('details', { class: 'lang-other' }, h('summary', { text: '一覧にない言語を足す（ほかの書式を写す）' }),
+        h('div', { class: 'lang-add' }, '言語コード ', input, ' 　写す元 ', fromSel, ' ', h('button', { type: 'button', onclick: () => addLang() }, '足す')),
+        h('p', { class: 'hint', text: '例：ラテン語（la）の文献をフランス語の論文と同じ形で組みたいときは、写す元に「フランス語の既定の書式」か、直したあとの「いまのフランス語（fr）の書式」を選びます。並び・人名の設定・文末に加えて、用語表の語も写します（ラテン語の列に p.・éd. などが入るので、必要なら直してください）。欧文の書式から写すときだけ、その言語の用語の初期値があれば重ねます。和文の書式を写した場合、「第2章」の「第」を付ける働きは和文の書式にしか効きません。' })));
   }
 
   // ---- 右：プレビュー ---------------------------------------------------------------
