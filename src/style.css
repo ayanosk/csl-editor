@@ -140,6 +140,9 @@ h3 { font-size: 13px; margin: 14px 0 6px; }
 }
 .chip.sep { border-color: var(--sep-line); background: var(--sep); border-radius: 4px; padding: 4px 7px; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }
 .chip.idle { opacity: .4; text-decoration: line-through; }
+/* 区切りは後ろの部品とひと組：隙間を詰め、つなぎ目の角を落として1つの塊に見せる */
+.chip.sep.bind { margin-right: -6px; border-right-style: dashed; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.chip.bound { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .chip.selected { outline: 2px solid var(--sel); outline-offset: 1px; }
 .chip.drop-before { box-shadow: -4px 0 0 var(--sel); }
 .chip.drop-after { box-shadow: 4px 0 0 var(--sel); }

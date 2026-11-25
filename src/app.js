@@ -444,15 +444,24 @@
       row.replaceChildren(h('span', { class: 'empty-row', text: '部品がありません。下の「部品を足す」から足してください。' }));
       return;
     }
-    const firstField = list.findIndex((c) => c.t !== 'sep');
-    const lastField = list.length - 1 - [...list].reverse().findIndex((c) => c.t !== 'sep');
+    // 区切りは、すぐ後ろの部品とひと組（後ろの部品が空の文献では一緒に消える）。画面でも後ろの部品にくっつけて描く。
+    // 後ろに部品が無い（〕か列の終わり）区切りと、前に部品が無い（列の頭か〔の直後）区切りは出ない。
+    const sepInfo = list.map((c, i) => {
+      if (c.t !== 'sep') return null;
+      let j = i + 1; while (j < list.length && list[j].t === 'sep') j++;
+      let k = i - 1; while (k >= 0 && list[k].t === 'sep') k--;
+      if (j >= list.length || list[j].t === 'close') return { idle: '後ろに部品が無いので、この区切りは出ません' };
+      if (k < 0 || list[k].t === 'open') return { idle: '前に部品が無い（行の頭か〔の直後）ので、この区切りは出ません' };
+      const who = list[j].t === 'open' ? '〔 〕のまとまり' : '「' + fieldLabel(list[j]) + '」';
+      return { next: j, title: `区切り。後ろの${who}とひと組で、${who}が空の文献ではこの区切りも消えます` };
+    });
     row.replaceChildren(...list.map((c, i) => {
       const n = chipNode(c, i);
       if (c.uid === state.ui.sel) n.classList.add('selected');
-      if (c.t === 'sep' && (firstField < 0 || i < firstField || i > lastField)) {
-        n.classList.add('idle');
-        n.title = '両側に部品が無いので、この区切りは出ません';
-      }
+      const si = sepInfo[i];
+      if (si && si.idle) { n.classList.add('idle'); n.title = si.idle; }
+      if (si && !si.idle) { n.classList.add('bind'); n.title = si.title; }
+      if (i > 0 && sepInfo[i - 1] && sepInfo[i - 1].next === i) n.classList.add('bound');
       n.addEventListener('click', () => { state.ui.sel = c.uid; renderChipRow(); renderDetail(); });
       n.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', String(i)); e.dataTransfer.effectAllowed = 'move'; });
       n.addEventListener('dragover', (e) => {
@@ -593,7 +602,7 @@
     }
     if (c.t === 'sep') {
       add('区切りの文字', text(() => c.v, (v) => { c.v = v; }, '空なら「なし」'));
-      box.replaceChildren(head, grid, h('p', { class: 'hint', text: '空白は ␣ で表示します。前後の部品のどちらかが空の文献では、この区切りは出ません。' }));
+      box.replaceChildren(head, grid, h('p', { class: 'hint', text: '空白は ␣ で表示します。区切りは、すぐ後ろの部品とひと組です。後ろの部品が空の文献では、この区切りも一緒に消えます。行の頭（〔 の直後を含む）には出ません。' }));
       return;
     }
     const def = G.FIELDS[c.f];
@@ -667,7 +676,30 @@
     };
     add('人名の間の区切り', inp(n, 'delimiter'));
     add('最後の人名の前', sel(n, 'and', [['none', '何も入れない'], ['text', '用語表の「最後の人名の前」'], ['symbol', '&']]));
-    add('人数が多いとき', h('span', {}, inp(n, 'etAlMin', 'number'), ' 人以上なら、最初の ', inp(n, 'etAlUseFirst', 'number'), ' 人＋「', termOfSys(sk, 'et-al'), '」'));
+    // 人数の欄と「何人でも全員書く」。全員書くときは人数の欄を使わない。
+    const etAlCtl = (allKey, minKey, firstKey) => {
+      const nums = [inp(n, minKey, 'number'), inp(n, firstKey, 'number')];
+      const sync = () => nums.forEach((el) => { el.disabled = !!n[allKey]; });
+      sync();
+      return h('span', {}, nums[0], ' 人以上なら、最初の ', nums[1], ' 人＋「', termOfSys(sk, 'et-al'), '」　',
+        h('label', {}, h('input', { type: 'checkbox', checked: !!n[allKey], onchange: (e) => { n[allKey] = e.target.checked; sync(); changed({ row: false }); } }), ' 何人でも全員書く'));
+    };
+    add('人数が多いとき', etAlCtl('etAlAll', 'etAlMin', 'etAlUseFirst'));
+    // 注（本文中の引用）だけ別の人数にする（本文は Quirk et al.、参考文献は全員、など）。外すと参考文献と同じ人数。
+    const citeName = state.model.kind === 'note' ? '注' : '本文中の引用';
+    const citeEtAlRow = [h('label', { text: citeName + 'の人数' }), etAlCtl('citeEtAlAll', 'citeEtAlMin', 'citeEtAlUseFirst')];
+    add('', h('label', {}, h('input', { type: 'checkbox', checked: !!n.citeEtAl, onchange: (e) => {
+      n.citeEtAl = e.target.checked;
+      if (n.citeEtAl && n.citeEtAlMin === undefined) {
+        n.citeEtAlMin = n.etAlMin; n.citeEtAlUseFirst = n.etAlUseFirst; n.citeEtAlAll = !!n.etAlAll;
+        citeEtAlRow[1].querySelectorAll('input[type=number]').forEach((el, k) => { el.value = [n.citeEtAlMin, n.citeEtAlUseFirst][k] ?? ''; el.disabled = n.citeEtAlAll; });
+        citeEtAlRow[1].querySelector('input[type=checkbox]').checked = n.citeEtAlAll;
+      }
+      citeEtAlRow.forEach((el) => { el.hidden = !n.citeEtAl; });
+      changed({ row: false });
+    } }), ' ' + citeName + 'では別の人数にする（参考文献は上の人数）'));
+    citeEtAlRow.forEach((el) => { el.hidden = !n.citeEtAl; });
+    grid.append(...citeEtAlRow);
     add('「' + (termOfSys(sk, 'et-al') || 'ほか') + '」の前', sel(n, 'precedesEtAl', [['never', '区切りを入れない'], ['contextual', '2人以上出すときだけ区切りを入れる'], ['always', 'いつも区切りを入れる']]));
     add('欧文の名', h('label', {}, h('input', { type: 'checkbox', checked: !!n.initialize, onchange: (e) => { n.initialize = e.target.checked; changed({ row: false }); } }), ' 頭文字にする（J. Smith）'));
     if (sk !== 'ja') add('欧文の姓', sel(n, 'familyCase', [['', 'そのまま（Dubois）'], ['uppercase', 'すべて大文字（DUBOIS）'], ['small-caps', 'スモールキャピタル（頭だけ大きく、残りは小さな大文字）']]));

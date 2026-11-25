@@ -298,8 +298,9 @@
       // 姓を前に出す形（Dubois, Léa, and Jules Moreau）では最後の名前の前にも区切りを入れる。
       'delimiter-precedes-last': !short && opt.order && opt.order !== 'given' ? (n.precedesLastInverted || 'always') : (n.precedesLast || ''),
       'delimiter-precedes-et-al': n.precedesEtAl || '',
-      'et-al-min': n.etAlMin || '',
-      'et-al-use-first': n.etAlUseFirst || '',
+      // 「何人でも全員書く」なら et-al-min を書かない（CSL では略さずに全員が出る）
+      'et-al-min': n.etAlAll ? '' : (n.etAlMin || ''),
+      'et-al-use-first': n.etAlAll ? '' : (n.etAlUseFirst || ''),
       'initialize-with': n.initialize && !short ? (n.initializeWith ?? '. ') : '',
       'name-as-sort-order': !short && opt.order === 'family' ? 'first' : (!short && opt.order === 'family-all' ? 'all' : ''),
       'sort-separator': !short && opt.order && opt.order !== 'given' ? (n.sortSeparator || ', ') : '',
@@ -336,7 +337,7 @@
 
   // ---- 並び（チップの列）→ 入れ子の group ---------------------------------------
   // 区切りは両側に部品があるときだけ出る。列の端にある区切りは何も出さない。
-  // 部品が空の文献では、その部品とその前の区切りが消える（左から入れ子にするため）。
+  // 区切りはすぐ後ろの部品とひと組：部品が空の文献では、その部品とその前の区切りが消える（左から入れ子にするため）。
   // 〔 〕（t:'open' / t:'close'）で囲んだ部品は1つのまとまり（CSL の group）になる。まとまりの中が全部空なら、
   // まとまりと、その前の区切りが消える。〔 の前に付ける文字と 〕 の後ろに付ける文字は、まとまりが出るときだけ出る。
   // 例：書名 ． 〔訳者 ， 出版者 ， 年〕 → 訳者が空でも「書名. 出版者, 年」。
@@ -461,8 +462,15 @@
     // 直前と同じ文書：頁が違えば citeIbid の並び、頁も同じなら citeIbid から引用頁を外した並び（「同上。」）。
     // 間を挟んだ2回目以降：citeSub。初出：cite。
     const noLocator = (byTab) => Object.fromEntries(Object.entries(byTab || {}).map(([k, c]) => [k, (c || []).filter((x) => !(x.t === 'field' && x.f === 'locator'))]));
+    // 「注では別の人数にする」を入れたときは、注（本文中の引用）の人名だけ、その人数で「ほか」「et al.」にする。
+    // 参考文献は書式全体の人数のまま。部品ごとの人名の設定（公式のスタイルから移したもの）はこれにも優先する。
+    const citeSys = (sk) => {
+      const n = S[sk].names || {};
+      if (!n.citeEtAl) return S[sk];
+      return { ...S[sk], names: { ...n, etAlAll: !!n.citeEtAlAll, etAlMin: n.citeEtAlMin, etAlUseFirst: n.citeEtAlUseFirst } };
+    };
     const citeBody = (sk) => {
-      const sys = S[sk];
+      const sys = citeSys(sk);
       const first = chooseXml(sys.cite, sk, sys, ctx, tabs);
       if (kind !== 'note' || !model.subsequent || !sys.citeSub) return first;
       const ibid = sys.citeIbid || sys.citeSub;
